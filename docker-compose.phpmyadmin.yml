@@ -1,0 +1,14 @@
+services:
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: book_readings_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8082}:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    depends_on:
+      db:
+        condition: service_healthy

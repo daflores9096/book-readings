@@ -1,0 +1,25 @@
+### OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.history/
+
+### Node / frontend
+**/node_modules/
+**/dist/
+.env
+**/.angular/
+**/out-tsc/
+**/coverage/
+**/*.log
+
+### PHP / Composer
+**/vendor/
+
+### Uploads (keep directory with .gitkeep)
+api/public/uploads/covers/*
+!api/public/uploads/covers/.gitkeep
+
+### Misc
+**/.sass-cache/
