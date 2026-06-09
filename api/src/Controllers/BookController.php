@@ -266,9 +266,12 @@ class BookController
         $absolutePath = __DIR__ . '/../../public/' . $relativePath;
         $uploadDir = dirname($absolutePath);
 
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true)) {
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0777, true)) {
             Response::error('No se pudo crear el directorio de portadas', 500);
         }
+
+        @chmod(dirname($uploadDir), 0777);
+        @chmod($uploadDir, 0777);
 
         if (!is_writable($uploadDir)) {
             Response::error('El directorio de portadas no tiene permisos de escritura', 500);
