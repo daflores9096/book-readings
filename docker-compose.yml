@@ -46,6 +46,10 @@ services:
       APP_URL: ${APP_URL:-http://localhost:18081}
     volumes:
       - uploads_data:/var/www/html/public/uploads
+    command:
+      - sh
+      - -c
+      - mkdir -p /var/www/html/public/uploads/covers && chown -R www-data:www-data /var/www/html/public/uploads && apache2-foreground
     depends_on:
       db:
         condition: service_healthy

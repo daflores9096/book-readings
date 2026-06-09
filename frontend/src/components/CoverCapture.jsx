@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Camera } from 'lucide-react';
 
-function resizeImage(file, maxWidth = 1200) {
+function resizeImage(file, maxWidth = 900) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -24,7 +24,7 @@ function resizeImage(file, maxWidth = 1200) {
             resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
           },
           'image/jpeg',
-          0.82,
+          0.78,
         );
       };
       img.onerror = reject;

@@ -32,8 +32,14 @@ if (preg_match('#^/api/books/(\d+)/cover$#', $path, $matches) && $method === 'PO
     exit;
 }
 
-if (preg_match('#^/api/books/(\d+)$#', $path, $matches) && $method === 'GET') {
-    $controller->show((int)$matches[1]);
+if (preg_match('#^/api/books/(\d+)$#', $path, $matches)) {
+    if ($method === 'GET') {
+        $controller->show((int)$matches[1]);
+    } elseif ($method === 'PUT') {
+        $controller->update((int)$matches[1]);
+    } else {
+        Response::error('Método no permitido', 405);
+    }
     exit;
 }
 

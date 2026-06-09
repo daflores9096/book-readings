@@ -187,6 +187,63 @@ class BookController
         ], 201);
     }
 
+    public function update(int $id): void
+    {
+        AuthMiddleware::verifyToken();
+        $book = $this->bookRepository->findById($id);
+        if (!$book) {
+            Response::error('Libro no encontrado', 404);
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $title = trim((string)($input['title'] ?? ''));
+        if ($title === '') {
+            Response::error('El título es obligatorio', 400);
+        }
+
+        $isbn13 = null;
+        if (!empty($input['isbn13']) || !empty($input['isbn'])) {
+            $isbn13 = IsbnHelper::normalize((string)($input['isbn13'] ?? $input['isbn']));
+            if (!$isbn13) {
+                Response::error('ISBN inválido', 400);
+            }
+            if ($this->bookRepository->isbn13ExistsExcept($id, $isbn13)) {
+                Response::error('Ya existe otro libro con ese ISBN', 409);
+            }
+        }
+
+        $authors = $input['authors'] ?? [];
+        if (is_string($authors)) {
+            $authors = array_values(array_filter(array_map('trim', explode(',', $authors))));
+        }
+
+        $pageCount = null;
+        if (array_key_exists('page_count', $input) && $input['page_count'] !== null && $input['page_count'] !== '') {
+            $pageCount = (int)$input['page_count'];
+            if ($pageCount < 0) {
+                Response::error('page_count inválido', 400);
+            }
+        }
+
+        $this->bookRepository->update($id, [
+            'isbn13' => $isbn13,
+            'isbn10' => $isbn13 ? IsbnHelper::toIsbn10($isbn13) : null,
+            'title' => $title,
+            'authors' => $authors,
+            'page_count' => $pageCount,
+            'publisher' => $input['publisher'] ?? null,
+            'published_date' => $input['published_date'] ?? null,
+            'description' => $input['description'] ?? null,
+            'cover_url' => $input['cover_url'] ?? null,
+            'source' => $input['source'] ?? ($book['source'] ?? 'manual'),
+        ]);
+
+        Response::json([
+            'status' => 'success',
+            'data' => $this->bookRepository->findById($id),
+        ]);
+    }
+
     public function uploadCover(int $id): void
     {
         AuthMiddleware::verifyToken();
@@ -195,14 +252,27 @@ class BookController
             Response::error('Libro no encontrado', 404);
         }
 
-        if (empty($_FILES['cover']) || $_FILES['cover']['error'] !== UPLOAD_ERR_OK) {
+        if (empty($_FILES['cover'])) {
             Response::error('Archivo de portada requerido', 400);
+        }
+
+        if ($_FILES['cover']['error'] !== UPLOAD_ERR_OK) {
+            Response::error($this->uploadErrorMessage((int)$_FILES['cover']['error']), 400);
         }
 
         $tmpPath = $_FILES['cover']['tmp_name'];
         $filename = 'book_' . $id . '_' . time() . '.jpg';
         $relativePath = 'uploads/covers/' . $filename;
         $absolutePath = __DIR__ . '/../../public/' . $relativePath;
+        $uploadDir = dirname($absolutePath);
+
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true)) {
+            Response::error('No se pudo crear el directorio de portadas', 500);
+        }
+
+        if (!is_writable($uploadDir)) {
+            Response::error('El directorio de portadas no tiene permisos de escritura', 500);
+        }
 
         if (!ImageOptimizer::saveCover($tmpPath, $absolutePath)) {
             Response::error('No se pudo procesar la imagen', 400);
@@ -217,5 +287,18 @@ class BookController
                 'cover_url' => '/' . $relativePath,
             ],
         ]);
+    }
+
+    private function uploadErrorMessage(int $code): string
+    {
+        return match ($code) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'La imagen excede el tamaño máximo permitido',
+            UPLOAD_ERR_PARTIAL => 'La imagen se subió parcialmente. Intenta nuevamente',
+            UPLOAD_ERR_NO_FILE => 'No se recibió ningún archivo de portada',
+            UPLOAD_ERR_NO_TMP_DIR => 'Falta el directorio temporal para subir archivos',
+            UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir la imagen en el servidor',
+            UPLOAD_ERR_EXTENSION => 'Una extensión de PHP detuvo la subida de la imagen',
+            default => 'Error desconocido al subir la portada',
+        };
     }
 }

@@ -11,6 +11,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 COPY api/ /var/www/html/
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 RUN composer config --global audit.block-insecure false \
     && composer install --no-interaction --no-scripts --no-progress --prefer-dist --ignore-platform-reqs

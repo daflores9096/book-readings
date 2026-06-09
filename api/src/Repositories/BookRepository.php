@@ -29,6 +29,13 @@ class BookRepository
         return $row ? $this->hydrateBook($row) : null;
     }
 
+    public function isbn13ExistsExcept(int $id, string $isbn13): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM books WHERE isbn13 = :isbn13 AND id != :id LIMIT 1');
+        $stmt->execute(['isbn13' => $isbn13, 'id' => $id]);
+        return (bool)$stmt->fetchColumn();
+    }
+
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('
@@ -69,6 +76,37 @@ class BookRepository
         $stmt = $this->db->prepare('UPDATE books SET page_count = :page_count WHERE id = :id');
         $stmt->execute([
             'page_count' => $pageCount,
+            'id' => $id,
+        ]);
+    }
+
+    public function update(int $id, array $data): void
+    {
+        $stmt = $this->db->prepare('
+            UPDATE books
+            SET isbn13 = :isbn13,
+                isbn10 = :isbn10,
+                title = :title,
+                authors = :authors,
+                page_count = :page_count,
+                publisher = :publisher,
+                published_date = :published_date,
+                description = :description,
+                cover_url = :cover_url,
+                source = :source
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            'isbn13' => $data['isbn13'] ?? null,
+            'isbn10' => $data['isbn10'] ?? null,
+            'title' => $data['title'],
+            'authors' => json_encode($data['authors'] ?? [], JSON_UNESCAPED_UNICODE),
+            'page_count' => $data['page_count'] ?? null,
+            'publisher' => $data['publisher'] ?? null,
+            'published_date' => $data['published_date'] ?? null,
+            'description' => $data['description'] ?? null,
+            'cover_url' => $data['cover_url'] ?? null,
+            'source' => $data['source'] ?? 'manual',
             'id' => $id,
         ]);
     }

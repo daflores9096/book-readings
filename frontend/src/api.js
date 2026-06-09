@@ -132,6 +132,10 @@ export function getBook(id) {
   return api(`/api/books/${id}`);
 }
 
+export function updateBook(id, payload) {
+  return api(`/api/books/${id}`, { method: 'PUT', body: payload });
+}
+
 export function uploadBookCover(id, file) {
   const formData = new FormData();
   formData.append('cover', file);

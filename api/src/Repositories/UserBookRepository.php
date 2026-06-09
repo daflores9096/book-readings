@@ -26,7 +26,8 @@ class UserBookRepository
                 b.isbn13,
                 b.isbn10,
                 b.publisher,
-                b.published_date
+                b.published_date,
+                b.description
             FROM user_books ub
             JOIN books b ON b.id = ub.book_id
             WHERE ub.user_id = :user_id
