@@ -85,7 +85,7 @@ export default function ManualBookPage() {
           <div>
             <label className="mb-1 block text-sm font-medium">Agregar a</label>
             <select className="w-full rounded-lg border border-slate-300 px-3 py-2" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-              <option value="want_to_read">Quiere leer</option>
+              <option value="want_to_read">Quiero leer</option>
               <option value="reading">Leyendo</option>
               <option value="read">Leídos</option>
             </select>

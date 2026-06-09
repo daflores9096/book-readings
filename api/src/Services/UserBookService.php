@@ -45,22 +45,40 @@ class UserBookService
             Response::error('Registro no encontrado', 404);
         }
 
+        $hasStatusInput = array_key_exists('status', $input);
+        $hasStartedAtInput = array_key_exists('started_at', $input);
+        $hasFinishedAtInput = array_key_exists('finished_at', $input);
+
         $status = $input['status'] ?? $entry['status'];
         $currentPage = isset($input['current_page']) ? max(0, (int)$input['current_page']) : (int)$entry['current_page'];
         $pageCount = isset($entry['page_count']) ? (int)$entry['page_count'] : null;
+
+        if (array_key_exists('page_count', $input)) {
+            $pageCount = $input['page_count'] === null || $input['page_count'] === ''
+                ? null
+                : (int)$input['page_count'];
+
+            if ($pageCount !== null && $pageCount < 0) {
+                Response::error('El número de páginas no puede ser negativo', 400);
+            }
+
+            $this->bookRepository->updatePageCount((int)$entry['book_id'], $pageCount);
+        }
 
         if ($pageCount !== null && $pageCount > 0 && $currentPage > $pageCount) {
             Response::error('La página actual no puede superar el total de páginas', 400);
         }
 
-        $startedAt = $entry['started_at'];
-        $finishedAt = $entry['finished_at'];
+        $startedAt = $hasStartedAtInput ? $this->normalizeDate($input['started_at']) : $entry['started_at'];
+        $finishedAt = $hasFinishedAtInput ? $this->normalizeDate($input['finished_at']) : $entry['finished_at'];
 
         if ($status === 'reading') {
             if (!$startedAt) {
                 $startedAt = date('Y-m-d');
             }
-            $finishedAt = null;
+            if (!$hasFinishedAtInput) {
+                $finishedAt = null;
+            }
         }
 
         if ($currentPage > 0 && $status === 'want_to_read') {
@@ -74,13 +92,15 @@ class UserBookService
             if (!$startedAt) {
                 $startedAt = date('Y-m-d');
             }
-            $finishedAt = date('Y-m-d');
+            if (!$finishedAt) {
+                $finishedAt = date('Y-m-d');
+            }
             if ($pageCount !== null && $pageCount > 0) {
                 $currentPage = $pageCount;
             }
         }
 
-        if ($status === 'want_to_read') {
+        if ($status === 'want_to_read' && $hasStatusInput && !$hasStartedAtInput && !$hasFinishedAtInput) {
             $currentPage = 0;
             $startedAt = null;
             $finishedAt = null;
@@ -94,6 +114,20 @@ class UserBookService
         ]);
 
         return $this->userBookRepository->findByIdForUser($userBookId, $userId) ?? [];
+    }
+
+    private function normalizeDate(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d', (string)$value);
+        if (!$date || $date->format('Y-m-d') !== $value) {
+            Response::error('Fecha inválida. Usa formato YYYY-MM-DD', 400);
+        }
+
+        return $date->format('Y-m-d');
     }
 
     public function remove(int $userId, int $userBookId): void

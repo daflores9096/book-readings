@@ -5,7 +5,7 @@ import { deleteMyBook, getMyBooks, updateMyBook } from '../api.js';
 import { authorsLabel, coverSrc, progressPercent } from '../navigation.js';
 
 const STATUS_LABELS = {
-  want_to_read: 'Quiere leer',
+  want_to_read: 'Quiero leer',
   reading: 'Leyendo',
   read: 'Leídos',
 };
@@ -18,6 +18,9 @@ export default function BookDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [pageCount, setPageCount] = useState('');
+  const [startedAt, setStartedAt] = useState('');
+  const [finishedAt, setFinishedAt] = useState('');
 
   async function load() {
     setLoading(true);
@@ -31,7 +34,7 @@ export default function BookDetailPage() {
         return;
       }
       setEntry(found);
-      setCurrentPage(found.current_page || 0);
+      syncForm(found);
     } catch (err) {
       setError(err.message || 'No se pudo cargar el libro');
     } finally {
@@ -49,12 +52,28 @@ export default function BookDetailPage() {
     try {
       const res = await updateMyBook(entry.id, payload);
       setEntry(res.data);
-      setCurrentPage(res.data.current_page || 0);
+      syncForm(res.data);
     } catch (err) {
       setError(err.message || 'No se pudo actualizar');
     } finally {
       setSaving(false);
     }
+  }
+
+  function syncForm(data) {
+    setCurrentPage(data.current_page || 0);
+    setPageCount(data.page_count ?? '');
+    setStartedAt(data.started_at ?? '');
+    setFinishedAt(data.finished_at ?? '');
+  }
+
+  function saveReadingDetails() {
+    saveUpdate({
+      current_page: currentPage,
+      page_count: pageCount === '' ? null : Number(pageCount),
+      started_at: startedAt || null,
+      finished_at: finishedAt || null,
+    });
   }
 
   async function handleRemove() {
@@ -125,24 +144,65 @@ export default function BookDetailPage() {
             </div>
           ) : null}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Página actual</label>
-            <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="rounded-xl border border-slate-100 p-4">
+            <h2 className="mb-3 font-semibold text-slate-800">Datos de lectura</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium">Número de páginas</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  value={pageCount}
+                  onChange={(e) => setPageCount(e.target.value)}
+                  placeholder="Total de páginas"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Página actual</label>
+                <input
+                  type="number"
+                  min="0"
+                  max={pageCount || undefined}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  value={currentPage}
+                  onChange={(e) => setCurrentPage(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Fecha inicio de lectura</label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  value={startedAt}
+                  onChange={(e) => setStartedAt(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Fecha fin de lectura</label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  value={finishedAt}
+                  onChange={(e) => setFinishedAt(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
-                type="number"
-                min="0"
-                max={entry.page_count || undefined}
-                className="rounded-lg border border-slate-300 px-3 py-2"
-                value={currentPage}
-                onChange={(e) => setCurrentPage(Number(e.target.value))}
+                type="button"
+                disabled={saving}
+                onClick={saveReadingDetails}
+                className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:cursor-default disabled:opacity-60"
+                value={saving ? 'Guardando…' : 'Guardar datos de lectura'}
               />
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => saveUpdate({ current_page: currentPage })}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-60"
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                Guardar avance
+                Solo avance
               </button>
             </div>
           </div>

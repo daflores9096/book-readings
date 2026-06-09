@@ -64,6 +64,15 @@ class BookRepository
         $stmt->execute(['cover_path' => $coverPath, 'id' => $id]);
     }
 
+    public function updatePageCount(int $id, ?int $pageCount): void
+    {
+        $stmt = $this->db->prepare('UPDATE books SET page_count = :page_count WHERE id = :id');
+        $stmt->execute([
+            'page_count' => $pageCount,
+            'id' => $id,
+        ]);
+    }
+
     private function hydrateBook(array $row): array
     {
         $row['authors'] = json_decode($row['authors'] ?? '[]', true) ?: [];

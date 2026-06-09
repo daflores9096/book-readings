@@ -120,6 +120,10 @@ export function lookupBook(isbn) {
   return api(`/api/books/lookup/${encodeURIComponent(isbn)}`);
 }
 
+export function searchBooks(type, query) {
+  return api('/api/books/search', { params: { type, query } });
+}
+
 export function createBook(payload) {
   return api('/api/books', { method: 'POST', body: payload });
 }

@@ -12,6 +12,11 @@ if (!str_starts_with($path, '/api/books')) {
 
 $controller = new BookController();
 
+if ($path === '/api/books/search' && $method === 'GET') {
+    $controller->search();
+    exit;
+}
+
 if (preg_match('#^/api/books/lookup/([^/]+)$#', $path, $matches) && $method === 'GET') {
     $controller->lookup(urldecode($matches[1]));
     exit;

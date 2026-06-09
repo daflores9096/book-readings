@@ -60,6 +60,62 @@ class BookController
         ]);
     }
 
+    public function search(): void
+    {
+        AuthMiddleware::verifyToken();
+
+        $type = $_GET['type'] ?? 'isbn';
+        $query = trim((string)($_GET['query'] ?? ''));
+        if (!in_array($type, ['isbn', 'title', 'author'], true)) {
+            Response::error('Tipo de búsqueda inválido', 400);
+        }
+        if ($query === '') {
+            Response::error('Texto de búsqueda requerido', 400);
+        }
+
+        if ($type === 'isbn') {
+            $isbn13 = IsbnHelper::normalize($query);
+            if (!$isbn13) {
+                Response::error('ISBN inválido', 400);
+            }
+
+            $existing = $this->bookRepository->findByIsbn13($isbn13);
+            if ($existing) {
+                Response::json([
+                    'status' => 'success',
+                    'data' => [
+                        'found' => true,
+                        'results' => [$existing],
+                        'source' => 'local',
+                    ],
+                ]);
+            }
+        }
+
+        $results = $this->lookupService->search($type, $query);
+        if (empty($results)) {
+            Response::json([
+                'status' => 'success',
+                'data' => [
+                    'found' => false,
+                    'results' => [],
+                    'query' => $query,
+                    'type' => $type,
+                ],
+            ], 404);
+        }
+
+        Response::json([
+            'status' => 'success',
+            'data' => [
+                'found' => true,
+                'results' => $results,
+                'type' => $type,
+                'query' => $query,
+            ],
+        ]);
+    }
+
     public function show(int $id): void
     {
         AuthMiddleware::verifyToken();

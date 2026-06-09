@@ -1,6 +1,6 @@
 # Book Readings
 
-Aplicación web para registrar libros por ISBN, gestionar tu biblioteca personal (Quiere leer, Leyendo, Leídos), avance de lectura y portadas desde cámara móvil.
+Aplicación web para registrar libros por ISBN, gestionar tu biblioteca personal (Quiero leer, Leyendo, Leídos), avance de lectura y portadas desde cámara móvil.
 
 Arquitectura similar a [sales-app](https://github.com/daflores9096/sales-app):
 
@@ -52,7 +52,7 @@ Abrir `http://localhost:5173`. El proxy de Vite envía `/api` y `/uploads` hacia
 - Gestión de usuarios (admin)
 - Búsqueda de libros por ISBN (Open Library + Google Books)
 - Creación manual con portada optimizada (cámara/galería)
-- Estanterías personales: Quiere leer / Leyendo / Leídos
+- Estanterías personales: Quiero leer / Leyendo / Leídos
 - Registro de fechas de inicio/fin y avance por página
 
 ## Comandos útiles

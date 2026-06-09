@@ -10,7 +10,7 @@ export function getNavForRole(roleName) {
 }
 
 export const SHELF_TABS = [
-  { id: 'want_to_read', label: 'Quiere leer' },
+  { id: 'want_to_read', label: 'Quiero leer' },
   { id: 'reading', label: 'Leyendo' },
   { id: 'read', label: 'Leídos' },
 ];
