@@ -6,6 +6,7 @@ import CoverCapture from '../components/CoverCapture.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { deleteMyBook, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
 import { authorsLabel, coverSrc, progressPercent } from '../navigation.js';
+import { Alert, Button, Card, Field, Input, PageHeader, Progress, Select, Textarea } from '../components/ui.jsx';
 
 const STATUS_LABELS = {
   want_to_read: 'Quiero leer',
@@ -150,15 +151,15 @@ export default function BookDetailPage() {
   }
 
   if (loading) {
-    return <p className="rounded-xl bg-white p-6 text-slate-500 shadow-sm">Cargando…</p>;
+    return <Card className="p-6 text-sm text-slate-600">Cargando...</Card>;
   }
 
   if (!entry) {
     return (
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <p className="text-red-600">{error || 'Libro no encontrado'}</p>
-        <Link to="/library" className="mt-3 inline-block text-indigo-600">Volver a biblioteca</Link>
-      </div>
+      <Card className="p-6">
+        <Alert tone="error">{error || 'Libro no encontrado'}</Alert>
+        <Button as={Link} to="/library" variant="secondary" className="mt-4">Volver a biblioteca</Button>
+      </Card>
     );
   }
 
@@ -166,28 +167,28 @@ export default function BookDetailPage() {
   const progress = progressPercent(entry);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <Link to="/library" className="text-sm text-white/75 hover:text-white">← Mi biblioteca</Link>
-          <h1 className="mt-2 text-2xl font-bold text-white">{entry.title}</h1>
-          <p className="text-sm text-white/75">{authorsLabel(entry.authors)}</p>
-        </div>
-        <div className="flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={openEditModal} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+    <div className="mx-auto max-w-5xl space-y-5">
+      <PageHeader
+        eyebrow={<Link to="/library" className="hover:underline">Mi biblioteca</Link>}
+        title={entry.title}
+        description={authorsLabel(entry.authors)}
+        actions={(
+          <>
+            <Button type="button" onClick={openEditModal} variant="secondary" size="sm">
             <Pencil size={16} />
             Editar
-          </button>
-          <button type="button" onClick={handleRemove} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">
+            </Button>
+            <Button type="button" onClick={handleRemove} variant="danger" size="sm">
             <Trash2 size={16} />
             Quitar
-          </button>
-        </div>
-      </div>
+            </Button>
+          </>
+        )}
+      />
 
-      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {error && <Alert tone="error">{error}</Alert>}
 
-      <div className="grid gap-5 rounded-xl bg-white p-5 shadow-sm lg:grid-cols-[180px_1fr]">
+      <Card className="grid gap-5 p-5 lg:grid-cols-[180px_1fr]">
         <div className="mx-auto h-64 w-44 overflow-hidden rounded-lg bg-slate-100 lg:mx-0">
           {cover ? <img src={cover} alt={entry.title} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">Sin portada</div>}
         </div>
@@ -217,52 +218,46 @@ export default function BookDetailPage() {
                 <span>Progreso de lectura</span>
                 <span>{progress}%</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-indigo-600" style={{ width: `${progress}%` }} />
-              </div>
+              <Progress value={progress} className="h-3" />
             </div>
           ) : null}
 
           <div className="rounded-xl border border-slate-100 p-4">
             <h2 className="mb-3 font-semibold text-slate-800">Actualizar lectura</h2>
             <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-              <div>
-                <label className="mb-1 block text-sm font-medium">Estante</label>
-                <select
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+              <Field label="Estante">
+                <Select
                   value={quickStatus}
                   onChange={(e) => setQuickStatus(e.target.value)}
                 >
                   <option value="want_to_read">Quiero leer</option>
                   <option value="reading">Leyendo</option>
                   <option value="read">Leídos</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">Página actual</label>
-                <input
+                </Select>
+              </Field>
+              <Field label="Página actual">
+                <Input
                   type="number"
                   min="0"
                   max={entry.page_count || undefined}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
                   value={quickCurrentPage}
                   onChange={(e) => setQuickCurrentPage(e.target.value)}
                 />
-              </div>
+              </Field>
               {quickStatus === 'read' && (
                 <div>
                   <label className="mb-1 block text-sm font-medium">Puntuación</label>
                   <StarRating value={quickRating} onChange={setQuickRating} />
                 </div>
               )}
-              <button
+              <Button
                 type="button"
                 disabled={saving}
-                className="self-end rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                className="self-end"
                 onClick={handleSaveQuickReading}
               >
                 {saving ? 'Guardando…' : 'Actualizar'}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -273,7 +268,7 @@ export default function BookDetailPage() {
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {editOpen && editForm && (
         <Modal title="Editar libro" onClose={() => setEditOpen(false)} wide>
@@ -289,27 +284,23 @@ export default function BookDetailPage() {
                 <EditField label="Fecha publicación" value={editForm.published_date} onChange={(value) => setEditForm((form) => ({ ...form, published_date: value }))} />
               </div>
               <EditField label="URL de portada externa" value={editForm.cover_url} onChange={(value) => setEditForm((form) => ({ ...form, cover_url: value }))} />
-              <div>
-                <label className="mb-1 block text-sm font-medium">Descripción</label>
-                <textarea
-                  className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2"
+              <Field label="Descripción">
+                <Textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm((form) => ({ ...form, description: e.target.value }))}
                 />
-              </div>
+              </Field>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Estante</label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                <Field label="Estante">
+                  <Select
                     value={editForm.status}
                     onChange={(e) => setEditForm((form) => ({ ...form, status: e.target.value }))}
                   >
                     <option value="want_to_read">Quiero leer</option>
                     <option value="reading">Leyendo</option>
                     <option value="read">Leídos</option>
-                  </select>
-                </div>
+                  </Select>
+                </Field>
                 <EditField label="Página actual" type="number" value={editForm.current_page} onChange={(value) => setEditForm((form) => ({ ...form, current_page: value }))} />
                 <EditField label="Fecha inicio de lectura" type="date" value={editForm.started_at} onChange={(value) => setEditForm((form) => ({ ...form, started_at: value }))} />
                 <EditField label="Fecha fin de lectura" type="date" value={editForm.finished_at} onChange={(value) => setEditForm((form) => ({ ...form, finished_at: value }))} />
@@ -325,12 +316,12 @@ export default function BookDetailPage() {
                 </div>
               )}
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" className="rounded-lg border px-4 py-2 text-sm" onClick={() => setEditOpen(false)}>
+                <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
                   Cancelar
-                </button>
-                <button type="button" disabled={saving} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-60" onClick={handleSaveEdit}>
+                </Button>
+                <Button type="button" disabled={saving} onClick={handleSaveEdit}>
                   {saving ? 'Guardando…' : 'Guardar cambios'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -351,15 +342,13 @@ function Info({ label, value }) {
 
 function EditField({ label, value, onChange, type = 'text', required = false }) {
   return (
-    <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
-      <input
-        className="w-full rounded-lg border border-slate-300 px-3 py-2"
+    <Field label={label}>
+      <Input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
       />
-    </div>
+    </Field>
   );
 }

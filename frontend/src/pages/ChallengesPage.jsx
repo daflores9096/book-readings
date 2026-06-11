@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Trophy } from 'lucide-react';
 import Modal from '../components/Modal.jsx';
 import { createChallenge, deleteChallenge, getChallenges } from '../api.js';
+import { Alert, Button, Card, EmptyState, Field as UiField, Input, PageHeader, Progress, Select } from '../components/ui.jsx';
 
 export default function ChallengesPage() {
   const now = new Date();
@@ -74,15 +75,13 @@ export default function ChallengesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Desafíos</h1>
-          <p className="text-sm text-white/75">Revisa tus retos y crea nuevas metas de lectura.</p>
-        </div>
-        <button
+    <div className="mx-auto max-w-5xl space-y-5">
+      <PageHeader
+        title="Desafíos"
+        description="Revisa tus retos y crea nuevas metas de lectura."
+        actions={(
+          <Button
           type="button"
-          className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 hover:bg-orange-600"
           onClick={() => {
             setError('');
             setModalOpen(true);
@@ -90,21 +89,18 @@ export default function ChallengesPage() {
         >
           <Plus size={16} />
           Nuevo desafío
-        </button>
-      </div>
+          </Button>
+        )}
+      />
 
-      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {error && <Alert tone="error">{error}</Alert>}
 
-      <div className="rounded-2xl bg-white p-5 shadow-sm">
+      <Card className="p-5">
         <h2 className="mb-4 font-semibold text-slate-900">Mis desafíos</h2>
         {loading ? (
           <p className="text-sm text-slate-500">Cargando…</p>
         ) : challenges.length === 0 ? (
-          <div className="rounded-xl bg-slate-50 p-6 text-center">
-            <Trophy className="mx-auto mb-3 text-orange-400" size={34} />
-            <p className="font-medium text-slate-700">Todavía no tienes desafíos.</p>
-            <p className="mt-1 text-sm text-slate-500">Crea uno para verlo como barra de progreso en Mi Biblioteca.</p>
-          </div>
+          <EmptyState icon={Trophy} title="Todavía no tienes desafíos." description="Crea uno para verlo como barra de progreso en Mi Biblioteca." />
         ) : (
           <div className="space-y-3">
             {challenges.map((challenge) => (
@@ -112,7 +108,7 @@ export default function ChallengesPage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {modalOpen && (
         <Modal title="Nuevo desafío" onClose={() => setModalOpen(false)}>
@@ -120,12 +116,12 @@ export default function ChallengesPage() {
             <p className="mb-4 text-sm text-slate-500">Convierte tu objetivo en una carrera mensual o anual.</p>
             <ChallengeFormFields form={form} setForm={setForm} years={years} />
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" className="rounded-lg border px-4 py-2 text-sm" onClick={() => setModalOpen(false)}>
+              <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
                 Cancelar
-              </button>
-              <button type="submit" disabled={saving} className="rounded-lg bg-gradient-to-r from-orange-600 to-rose-600 px-4 py-2 text-sm font-semibold text-white hover:from-orange-700 hover:to-rose-700 disabled:opacity-60">
+              </Button>
+              <Button type="submit" disabled={saving}>
                 {saving ? 'Creando…' : 'Crear desafío'}
-              </button>
+              </Button>
             </div>
           </form>
         </Modal>
@@ -140,28 +136,25 @@ function ChallengeFormFields({ form, setForm, years }) {
       <Field label="Nombre" value={form.name} onChange={(value) => setForm((f) => ({ ...f, name: value }))} placeholder="Ej. Reto lector 2026" />
       <Field label="Libros objetivo" type="number" min="1" value={form.target_books} onChange={(value) => setForm((f) => ({ ...f, target_books: value }))} />
 
-      <div>
-        <label className="mb-1 block text-sm font-medium">Período</label>
-        <select className="w-full rounded-lg border border-slate-300 px-3 py-2" value={form.period_type} onChange={(e) => setForm((f) => ({ ...f, period_type: e.target.value }))}>
+        <UiField label="Período">
+        <Select value={form.period_type} onChange={(e) => setForm((f) => ({ ...f, period_type: e.target.value }))}>
           <option value="year">Año</option>
           <option value="month">Mes</option>
-        </select>
-      </div>
+        </Select>
+      </UiField>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium">Año</label>
-          <select className="w-full rounded-lg border border-slate-300 px-3 py-2" value={form.period_year} onChange={(e) => setForm((f) => ({ ...f, period_year: Number(e.target.value) }))}>
+        <UiField label="Año">
+          <Select value={form.period_year} onChange={(e) => setForm((f) => ({ ...f, period_year: Number(e.target.value) }))}>
             {years.map((year) => <option key={year} value={year}>{year}</option>)}
-          </select>
-        </div>
+          </Select>
+        </UiField>
         {form.period_type === 'month' && (
-          <div>
-            <label className="mb-1 block text-sm font-medium">Mes</label>
-            <select className="w-full rounded-lg border border-slate-300 px-3 py-2" value={form.period_month} onChange={(e) => setForm((f) => ({ ...f, period_month: Number(e.target.value) }))}>
+          <UiField label="Mes">
+            <Select value={form.period_month} onChange={(e) => setForm((f) => ({ ...f, period_month: Number(e.target.value) }))}>
               {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => <option key={month} value={month}>{month}</option>)}
-            </select>
-          </div>
+            </Select>
+          </UiField>
         )}
       </div>
     </div>
@@ -192,9 +185,7 @@ function ChallengeRow({ challenge, onDelete }) {
           <span className="font-medium text-slate-700">{completed}/{target} libros</span>
           <span className="font-semibold text-orange-600">{percent}%</span>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-full bg-gradient-to-r from-orange-500 via-rose-500 to-fuchsia-600" style={{ width: `${percent}%` }} />
-        </div>
+        <Progress value={percent} className="h-3" barClassName="bg-orange-500" />
       </div>
     </div>
   );
@@ -204,8 +195,7 @@ function Field({ label, value, onChange, type = 'text', min, placeholder }) {
   return (
     <div>
       <label className="mb-1 block text-sm font-medium">{label}</label>
-      <input
-        className="w-full rounded-lg border border-slate-300 px-3 py-2"
+      <Input
         type={type}
         min={min}
         value={value}

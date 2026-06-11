@@ -8,6 +8,7 @@ import {
   sendFriendRequest,
 } from '../api.js';
 import { displayName } from '../navigation.js';
+import { Alert, Button, Card, Input, PageHeader } from '../components/ui.jsx';
 
 export default function FriendsPage() {
   const [overview, setOverview] = useState({ friends: [], pending_received: [], pending_sent: [] });
@@ -97,33 +98,29 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Mis amigos</h1>
-        <p className="text-sm text-white/75">Busca lectores y comparte tu actividad de lectura</p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-5">
+      <PageHeader title="Mis amigos" description="Busca lectores y comparte tu actividad de lectura." />
 
-      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-      {message && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
+      {error && <Alert tone="error">{error}</Alert>}
+      {message && <Alert tone="success">{message}</Alert>}
 
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <Card className="p-4">
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-3 text-sm"
+            <Input
+              className="pl-10"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nombre, usuario o email..."
             />
           </div>
-          <button
+          <Button
             type="submit"
             disabled={searching}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
           >
             {searching ? 'Buscando…' : 'Buscar'}
-          </button>
+          </Button>
         </form>
 
         {searchResults.length > 0 && (
@@ -140,10 +137,10 @@ export default function FriendsPage() {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {loading ? (
-        <p className="rounded-xl bg-white p-6 text-slate-500 shadow-sm">Cargando…</p>
+        <Card className="p-6 text-sm text-slate-600">Cargando...</Card>
       ) : (
         <>
           <Section title="Solicitudes recibidas" empty="No tienes solicitudes pendientes.">
@@ -186,10 +183,10 @@ function Section({ title, empty, children }) {
   const hasItems = items.some(Boolean) && items.length > 0 && !(items.length === 1 && !items[0]);
 
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
+    <Card className="p-4">
       <h2 className="mb-3 font-semibold text-slate-800">{title}</h2>
       {hasItems ? <div className="space-y-2">{children}</div> : <p className="text-sm text-slate-500">{empty}</p>}
-    </div>
+    </Card>
   );
 }
 

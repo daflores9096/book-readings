@@ -1,10 +1,10 @@
 export default function Modal({ title, onClose, children, wide }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
-      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white shadow-2xl ${wide ? 'max-w-2xl' : 'max-w-md'}`}>
-        <div className="m-4 mb-0 flex items-center justify-between rounded-xl bg-gradient-to-r from-[#0b2545] to-[#0f3a68] px-5 py-4 text-white shadow-lg">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10" aria-label="Cerrar">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl ${wide ? 'max-w-2xl' : 'max-w-md'}`}>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
+          <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700" aria-label="Cerrar">
             ×
           </button>
         </div>

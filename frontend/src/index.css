@@ -1,10 +1,15 @@
 @import 'tailwindcss';
 
 :root {
-  --brand-primary: #0f3a68;
-  --brand-dark: #071a33;
-  --brand-page: #f4f7fb;
-  --brand-text: #344767;
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-500: #2563eb;
+  --brand-600: #155eef;
+  --brand-700: #0f4ac6;
+  --brand-900: #102a56;
+  --brand-page: #f8fafc;
+  --brand-text: #334155;
 }
 
 body {
@@ -13,4 +18,19 @@ body {
   font-family: Inter, Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: var(--brand-page);
   color: var(--brand-text);
+}
+
+@theme {
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-900: var(--brand-900);
+}
+
+::selection {
+  background: var(--brand-100);
+  color: var(--brand-900);
 }

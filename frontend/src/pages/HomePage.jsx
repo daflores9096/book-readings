@@ -13,6 +13,7 @@ import {
   progressPercent,
 } from '../navigation.js';
 import { useAuth } from '../auth.jsx';
+import { Alert, Badge, Button, Card, EmptyState, PageHeader, Progress } from '../components/ui.jsx';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -61,30 +62,21 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Inicio</h1>
-        <p className="text-sm text-white/75">
-          Actividad tuya y de tus amigos
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-5">
+      <PageHeader title="Inicio" description="Actividad tuya y de tus amigos." />
 
-      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-      {message && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
+      {error && <Alert tone="error">{error}</Alert>}
+      {message && <Alert tone="success">{message}</Alert>}
 
       {loading ? (
-        <p className="rounded-xl bg-white p-6 text-slate-500 shadow-sm">Cargando…</p>
+        <Card className="p-6 text-sm text-slate-600">Cargando...</Card>
       ) : items.length === 0 ? (
-        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-          <BookOpen className="mx-auto mb-3 text-slate-400" size={36} />
-          <p className="text-slate-600">Aún no hay actividad.</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Agrega libros a tu biblioteca o conecta con amigos para ver actualizaciones aquí.
-          </p>
-          <Link to="/friends" className="mt-4 inline-block text-indigo-600 hover:underline">
-            Ir a Mis amigos
-          </Link>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title="Aún no hay actividad."
+          description="Agrega libros a tu biblioteca o conecta con amigos para ver actualizaciones aquí."
+          action={<Button as={Link} to="/friends" variant="secondary">Ir a Mis amigos</Button>}
+        />
       ) : (
         <div className="space-y-4">
           {items.map((item) => (
@@ -118,7 +110,7 @@ function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
   const canAddToLibrary = !isOwn && !isInViewerLibrary;
 
   const content = (
-    <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+    <Card className="p-4">
       <div className="mb-3 flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
           {actorName.charAt(0).toUpperCase()}
@@ -152,9 +144,9 @@ function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
           <p className="text-sm text-teal-700">{authorsLabel(item.authors)}</p>
 
           {status && isOwn && (
-            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-white">
+            <Badge tone="brand" className="mt-2">
               {STATUS_BADGE[status] || status}
-            </span>
+            </Badge>
           )}
 
           {(item.type === 'progress_updated' || item.type === 'status_reading' || item.type === 'book_added_reading') && pageCount > 0 && (
@@ -163,9 +155,7 @@ function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
                 <span>Progreso</span>
                 <span>Página {currentPage} de {pageCount}</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-amber-700" style={{ width: `${progress}%` }} />
-              </div>
+              <Progress value={progress} barClassName="bg-amber-600" />
             </div>
           )}
 
@@ -176,14 +166,15 @@ function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
           )}
 
           {canAddToLibrary && (
-            <button
+            <Button
               type="button"
               disabled={isAdding}
               onClick={onAddWantToRead}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+              className="mt-4"
+              size="sm"
             >
               {isAdding ? 'Agregando…' : 'Quiero leer'}
-            </button>
+            </Button>
           )}
 
           {!isOwn && isInViewerLibrary && (
@@ -191,7 +182,7 @@ function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 
   if (linkTarget && isOwn) {

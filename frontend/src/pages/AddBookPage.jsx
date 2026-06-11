@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { addMyBook, createBook, searchBooks } from '../api.js';
 import { authorsLabel, coverSrc } from '../navigation.js';
+import { Alert, Button, Card, PageHeader } from '../components/ui.jsx';
 
 export default function AddBookPage() {
   const navigate = useNavigate();
@@ -79,13 +80,11 @@ export default function AddBookPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Agregar libro</h1>
-        <p className="text-sm text-white/75">Busca por ISBN, título o autor en Open Library y Google Books</p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-5">
+      <PageHeader title="Agregar libro" description="Busca por ISBN, título o autor en Open Library y Google Books." />
 
-      <form onSubmit={handleSearch} className="rounded-xl bg-white p-5 shadow-sm">
+      <Card className="p-5">
+        <form onSubmit={handleSearch}>
         <div className="grid gap-3 sm:grid-cols-[180px_1fr_auto]">
           <div>
             <label className="mb-2 block text-sm font-medium">Buscar por</label>
@@ -117,27 +116,28 @@ export default function AddBookPage() {
           <input
             type="submit"
             disabled={loading}
-            className="self-end rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="self-end rounded-lg border border-transparent bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
             value={loading ? 'Buscando…' : 'Buscar'}
           />
         </div>
-      </form>
+        </form>
+      </Card>
 
-      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {error && <Alert tone="error">{error}</Alert>}
 
       {notFound && (
         <div className="rounded-xl bg-amber-50 p-5 text-sm text-amber-900">
           <p className="font-medium">No encontramos libros para esa búsqueda.</p>
           <p className="mt-1">Puedes crear el libro manualmente y subir la portada desde tu cámara.</p>
-          <Link to={manualHref} className="mt-3 inline-block rounded-lg bg-amber-700 px-3 py-1.5 text-white hover:bg-amber-800">
+          <Button as={Link} to={manualHref} variant="secondary" className="mt-3">
             Crear manualmente
-          </Link>
+          </Button>
         </div>
       )}
 
       {results.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-xl bg-white p-5 shadow-sm">
+          <Card className="p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="font-semibold text-slate-800">Resultados encontrados</h2>
               <span className="text-sm text-slate-500">{results.length} resultado{results.length === 1 ? '' : 's'}</span>
@@ -170,10 +170,10 @@ export default function AddBookPage() {
                 );
               })}
             </div>
-          </div>
+          </Card>
 
           {selected && (
-            <div className="rounded-xl bg-white p-5 shadow-sm">
+            <Card className="p-5">
               <h2 className="mb-4 font-semibold text-slate-800">Libro seleccionado</h2>
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="mx-auto h-48 w-32 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:mx-0">
@@ -193,12 +193,12 @@ export default function AddBookPage() {
                   <option value="read">Leídos</option>
                 </select>
               </div>
-              <button type="button" onClick={handleAdd} disabled={loading} className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60">
+              <Button type="button" onClick={handleAdd} disabled={loading} variant="success" className="mt-4">
                 {loading ? 'Guardando…' : 'Agregar a mi biblioteca'}
-              </button>
+              </Button>
             </div>
           </div>
-            </div>
+            </Card>
           )}
         </div>
       )}
