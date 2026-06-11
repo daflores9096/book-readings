@@ -30,11 +30,12 @@ class UserRepository
     public function create(array $data): int
     {
         $stmt = $this->db->prepare('
-            INSERT INTO users (username, password, email, role_id)
-            VALUES (:username, :password, :email, :role_id)
+            INSERT INTO users (username, full_name, password, email, role_id)
+            VALUES (:username, :full_name, :password, :email, :role_id)
         ');
         $stmt->execute([
             'username' => $data['username'],
+            'full_name' => $data['full_name'] ?? null,
             'password' => $data['password'],
             'email' => $data['email'],
             'role_id' => $data['role_id'],
@@ -45,7 +46,7 @@ class UserRepository
     public function listAll(): array
     {
         $stmt = $this->db->query('
-            SELECT u.id, u.username, u.email, u.role_id, r.name AS role, u.created_at
+            SELECT u.id, u.username, u.full_name, u.email, u.role_id, r.name AS role, u.created_at
             FROM users u
             JOIN roles r ON r.id = u.role_id
             ORDER BY u.id ASC
@@ -100,14 +101,15 @@ class UserRepository
         return (int)$stmt->fetchColumn();
     }
 
-    public function update(int $id, string $username, string $email, int $roleId): void
+    public function update(int $id, string $username, ?string $fullName, string $email, int $roleId): void
     {
         $stmt = $this->db->prepare('
-            UPDATE users SET username = :username, email = :email, role_id = :role_id
+            UPDATE users SET username = :username, full_name = :full_name, email = :email, role_id = :role_id
             WHERE id = :id
         ');
         $stmt->execute([
             'username' => $username,
+            'full_name' => $fullName !== '' ? $fullName : null,
             'email' => $email,
             'role_id' => $roleId,
             'id' => $id,

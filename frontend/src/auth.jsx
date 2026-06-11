@@ -56,5 +56,5 @@ export function RequireRole({ roles, children }) {
 }
 
 export function HomeRedirect() {
-  return <Navigate to="/library" replace />;
+  return <Navigate to="/home" replace />;
 }

@@ -33,6 +33,7 @@ class UserController
         }
 
         $username = trim((string)$input['username']);
+        $fullName = trim((string)($input['full_name'] ?? ''));
         $email = trim((string)$input['email']);
         $password = (string)$input['password'];
         $roleId = (int)$input['role_id'];
@@ -55,6 +56,7 @@ class UserController
 
         $id = $this->repo->create([
             'username' => $username,
+            'full_name' => $fullName !== '' ? $fullName : null,
             'password' => password_hash($password, PASSWORD_BCRYPT),
             'email' => $email,
             'role_id' => $roleId,
@@ -84,6 +86,7 @@ class UserController
         }
 
         $username = trim((string)$input['username']);
+        $fullName = trim((string)($input['full_name'] ?? ''));
         $email = trim((string)$input['email']);
         $roleId = (int)$input['role_id'];
 
@@ -98,7 +101,7 @@ class UserController
             Response::error('El email ya está en uso', 409);
         }
 
-        $this->repo->update($id, $username, $email, $roleId);
+        $this->repo->update($id, $username, $fullName !== '' ? $fullName : null, $email, $roleId);
         Response::json(['status' => 'success', 'message' => 'Usuario actualizado']);
     }
 

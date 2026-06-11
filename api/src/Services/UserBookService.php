@@ -9,11 +9,13 @@ class UserBookService
 {
     private UserBookRepository $userBookRepository;
     private BookRepository $bookRepository;
+    private ActivityService $activityService;
 
     public function __construct()
     {
         $this->userBookRepository = new UserBookRepository();
         $this->bookRepository = new BookRepository();
+        $this->activityService = new ActivityService();
     }
 
     public function listForUser(int $userId, ?string $status = null): array
@@ -35,6 +37,9 @@ class UserBookService
 
         $id = $this->userBookRepository->create($userId, $bookId, $status);
         $row = $this->userBookRepository->findByIdForUser($id, $userId);
+        if ($row) {
+            $this->activityService->recordAdded($userId, $row, $status);
+        }
         return $row ?? [];
     }
 
@@ -51,7 +56,12 @@ class UserBookService
 
         $status = $input['status'] ?? $entry['status'];
         $currentPage = isset($input['current_page']) ? max(0, (int)$input['current_page']) : (int)$entry['current_page'];
+        $rating = array_key_exists('rating', $input) ? (int)$input['rating'] : (int)($entry['rating'] ?? 0);
         $pageCount = isset($entry['page_count']) ? (int)$entry['page_count'] : null;
+
+        if ($rating < 0 || $rating > 5) {
+            Response::error('La puntuación debe estar entre 0 y 5 estrellas', 400);
+        }
 
         if (array_key_exists('page_count', $input)) {
             $pageCount = $input['page_count'] === null || $input['page_count'] === ''
@@ -81,6 +91,18 @@ class UserBookService
             }
         }
 
+        if (
+            $status === 'want_to_read'
+            && $hasStatusInput
+            && $entry['status'] !== 'want_to_read'
+            && !$hasStartedAtInput
+            && !$hasFinishedAtInput
+        ) {
+            $currentPage = 0;
+            $startedAt = null;
+            $finishedAt = null;
+        }
+
         if ($currentPage > 0 && $status === 'want_to_read') {
             $status = 'reading';
             if (!$startedAt) {
@@ -100,20 +122,24 @@ class UserBookService
             }
         }
 
-        if ($status === 'want_to_read' && $hasStatusInput && !$hasStartedAtInput && !$hasFinishedAtInput) {
-            $currentPage = 0;
-            $startedAt = null;
-            $finishedAt = null;
+        if ($status !== 'read') {
+            $rating = 0;
         }
 
         $this->userBookRepository->update($userBookId, [
             'status' => $status,
             'current_page' => $currentPage,
+            'rating' => $rating,
             'started_at' => $startedAt,
             'finished_at' => $finishedAt,
         ]);
 
-        return $this->userBookRepository->findByIdForUser($userBookId, $userId) ?? [];
+        $updated = $this->userBookRepository->findByIdForUser($userBookId, $userId) ?? [];
+        if ($updated) {
+            $this->activityService->recordFromUpdate($userId, $entry, $updated);
+        }
+
+        return $updated;
     }
 
     private function normalizeDate(mixed $value): ?string

@@ -157,3 +157,43 @@ export function updateMyBook(id, payload) {
 export function deleteMyBook(id) {
   return api(`/api/my-books/${id}`, { method: 'DELETE' });
 }
+
+export function getActivityFeed(params) {
+  return api('/api/activities/feed', { params });
+}
+
+export function getFriends() {
+  return api('/api/friends');
+}
+
+export function searchFriends(query) {
+  return api('/api/friends/search', { params: { query } });
+}
+
+export function sendFriendRequest(userId) {
+  return api('/api/friends/requests', { method: 'POST', body: { user_id: userId } });
+}
+
+export function respondFriendRequest(friendshipId, action) {
+  return api(`/api/friends/requests/${friendshipId}`, { method: 'PUT', body: { action } });
+}
+
+export function removeFriend(friendshipId) {
+  return api(`/api/friends/${friendshipId}`, { method: 'DELETE' });
+}
+
+export function getChallenges() {
+  return api('/api/challenges');
+}
+
+export function getActiveChallenge() {
+  return api('/api/challenges/active');
+}
+
+export function createChallenge(payload) {
+  return api('/api/challenges', { method: 'POST', body: payload });
+}
+
+export function deleteChallenge(id) {
+  return api(`/api/challenges/${id}`, { method: 'DELETE' });
+}

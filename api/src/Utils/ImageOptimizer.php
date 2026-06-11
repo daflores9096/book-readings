@@ -3,7 +3,7 @@ namespace App\Utils;
 
 class ImageOptimizer
 {
-    public static function saveCover(string $tmpPath, string $destinationPath, int $maxWidth = 1200): bool
+    public static function saveCover(string $tmpPath, string $destinationPath, int $maxWidth = 720, int $maxHeight = 960): bool
     {
         $info = @getimagesize($tmpPath);
         if ($info === false) {
@@ -29,8 +29,11 @@ class ImageOptimizer
             }
         }
 
-        $targetWidth = min($width, $maxWidth);
-        $targetHeight = (int)round($height * ($targetWidth / $width));
+        $width = imagesx($source);
+        $height = imagesy($source);
+        $scale = min(1, $maxWidth / $width, $maxHeight / $height);
+        $targetWidth = (int)round($width * $scale);
+        $targetHeight = (int)round($height * $scale);
         $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
         imagecopyresampled($canvas, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
 
@@ -39,7 +42,7 @@ class ImageOptimizer
             mkdir($dir, 0775, true);
         }
 
-        $saved = imagejpeg($canvas, $destinationPath, 82);
+        $saved = imagejpeg($canvas, $destinationPath, 72);
         imagedestroy($source);
         imagedestroy($canvas);
 

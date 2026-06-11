@@ -104,6 +104,7 @@ class UserBookRepository
             UPDATE user_books
             SET status = :status,
                 current_page = :current_page,
+                rating = :rating,
                 started_at = :started_at,
                 finished_at = :finished_at
             WHERE id = :id
@@ -111,6 +112,7 @@ class UserBookRepository
         $stmt->execute([
             'status' => $data['status'],
             'current_page' => $data['current_page'],
+            'rating' => $data['rating'],
             'started_at' => $data['started_at'],
             'finished_at' => $data['finished_at'],
             'id' => $id,

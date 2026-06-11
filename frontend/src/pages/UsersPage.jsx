@@ -12,8 +12,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({ username: '', password: '', email: '', role_id: 2 });
-  const [editForm, setEditForm] = useState({ id: 0, username: '', email: '', role_id: 2, role_name: '' });
+  const [form, setForm] = useState({ username: '', full_name: '', password: '', email: '', role_id: 2 });
+  const [editForm, setEditForm] = useState({ id: 0, username: '', full_name: '', email: '', role_id: 2, role_name: '' });
   const [resetForm, setResetForm] = useState({ userId: 0, username: '', password: '', password2: '' });
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -23,7 +23,7 @@ export default function UsersPage() {
     const q = search.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) =>
-      [u.id, u.username, u.email, u.role, u.role_id]
+      [u.id, u.username, u.full_name, u.email, u.role, u.role_id]
         .some((value) => String(value ?? '').toLowerCase().includes(q)),
     );
   }, [users, search]);
@@ -62,7 +62,7 @@ export default function UsersPage() {
         <button
           type="button"
           onClick={() => {
-            setForm({ username: '', password: '', email: '', role_id: 2 });
+            setForm({ username: '', full_name: '', password: '', email: '', role_id: 2 });
             setModal('create');
             setError('');
           }}
@@ -84,6 +84,7 @@ export default function UsersPage() {
                   <tr>
                     <th className="px-4 py-3">ID</th>
                     <th className="px-4 py-3">Usuario</th>
+                    <th className="px-4 py-3">Nombre completo</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Rol</th>
                     <th className="px-4 py-3 text-right">Acciones</th>
@@ -94,10 +95,11 @@ export default function UsersPage() {
                     <tr key={u.id} className="border-t border-slate-100">
                       <td className="px-4 py-3">{u.id}</td>
                       <td className="px-4 py-3 font-medium">{u.username}</td>
+                      <td className="px-4 py-3">{u.full_name || '—'}</td>
                       <td className="px-4 py-3">{u.email}</td>
                       <td className="px-4 py-3">{u.role}</td>
                       <td className="px-4 py-3 text-right">
-                        <IconButton label="Editar" onClick={() => { setEditForm({ id: u.id, username: u.username, email: u.email, role_id: Number(u.role_id), role_name: u.role }); setModal('edit'); setError(''); }}>
+                        <IconButton label="Editar" onClick={() => { setEditForm({ id: u.id, username: u.username, full_name: u.full_name || '', email: u.email, role_id: Number(u.role_id), role_name: u.role }); setModal('edit'); setError(''); }}>
                           <Pencil size={16} />
                         </IconButton>
                         <IconButton label="Cambiar contraseña" warning onClick={() => { setResetForm({ userId: u.id, username: u.username, password: '', password2: '' }); setModal('reset'); setError(''); }}>
@@ -122,13 +124,13 @@ export default function UsersPage() {
       {modal === 'create' && (
         <Modal title="Nuevo usuario" onClose={() => setModal(null)}>
           <UserFormFields form={form} setForm={setForm} />
-          <FormActions onCancel={() => setModal(null)} onSave={async () => { try { await createUser({ username: form.username, password: form.password, email: form.email, role_id: Number(form.role_id) }); setModal(null); await load(); } catch (err) { setError(err.message); } }} />
+          <FormActions onCancel={() => setModal(null)} onSave={async () => { try { await createUser({ username: form.username, full_name: form.full_name.trim() || null, password: form.password, email: form.email, role_id: Number(form.role_id) }); setModal(null); await load(); } catch (err) { setError(err.message); } }} />
         </Modal>
       )}
       {modal === 'edit' && (
         <Modal title="Editar usuario" onClose={() => setModal(null)}>
           <UserFormFields form={editForm} setForm={setEditForm} mode="edit" />
-          <FormActions onCancel={() => setModal(null)} onSave={async () => { try { await updateUser(editForm.id, { username: editForm.username.trim(), email: editForm.email.trim(), role_id: Number(editForm.role_id) }); setModal(null); await load(); } catch (err) { setError(err.message); } }} />
+          <FormActions onCancel={() => setModal(null)} onSave={async () => { try { await updateUser(editForm.id, { username: editForm.username.trim(), full_name: editForm.full_name.trim() || null, email: editForm.email.trim(), role_id: Number(editForm.role_id) }); setModal(null); await load(); } catch (err) { setError(err.message); } }} />
         </Modal>
       )}
       {modal === 'reset' && (
@@ -147,7 +149,7 @@ function ListToolbar({ search, setSearch, pageSize, setPageSize, total }) {
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
       <div className="relative min-w-[220px] flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-        <input className="w-full rounded-xl border border-slate-300 py-2 pl-10 pr-3 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por usuario, email o rol..." />
+        <input className="w-full rounded-xl border border-slate-300 py-2 pl-10 pr-3 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por usuario, nombre, email o rol..." />
       </div>
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <span>{total} resultados</span>
@@ -191,6 +193,7 @@ function UserFormFields({ form, setForm, mode }) {
     <div className="space-y-3">
       {mode !== 'edit' && <Field label="Contraseña" type="password" value={form.password} onChange={(v) => setForm((f) => ({ ...f, password: v }))} />}
       <Field label="Usuario" value={form.username} onChange={(v) => setForm((f) => ({ ...f, username: v }))} />
+      <Field label="Nombre completo" value={form.full_name} onChange={(v) => setForm((f) => ({ ...f, full_name: v }))} />
       <Field label="Email" value={form.email} onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
       <div>
         <label className="mb-1 block text-sm font-medium">Rol</label>

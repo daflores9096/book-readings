@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   if (isLoggedIn) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   async function handleSubmit(e) {
@@ -32,7 +32,7 @@ export default function LoginPage() {
         return;
       }
       login(res.data.token, res.data.user);
-      navigate('/library', { replace: true });
+      navigate('/home', { replace: true });
     } catch (err) {
       setError(err.status === 401 ? 'Credenciales incorrectas' : err.message || 'Error al iniciar sesión');
     } finally {

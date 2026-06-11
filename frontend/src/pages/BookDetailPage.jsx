@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal.jsx';
 import CoverCapture from '../components/CoverCapture.jsx';
+import StarRating from '../components/StarRating.jsx';
 import { deleteMyBook, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
 import { authorsLabel, coverSrc, progressPercent } from '../navigation.js';
 
@@ -21,6 +22,7 @@ export default function BookDetailPage() {
   const [error, setError] = useState('');
   const [quickStatus, setQuickStatus] = useState('want_to_read');
   const [quickCurrentPage, setQuickCurrentPage] = useState(0);
+  const [quickRating, setQuickRating] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
@@ -63,6 +65,7 @@ export default function BookDetailPage() {
       cover_url: entry.cover_url ?? '',
       status: entry.status ?? 'want_to_read',
       current_page: entry.current_page ?? 0,
+      rating: entry.rating ?? 0,
       started_at: entry.started_at ?? '',
       finished_at: entry.finished_at ?? '',
     });
@@ -72,15 +75,17 @@ export default function BookDetailPage() {
   function syncQuickForm(data) {
     setQuickStatus(data.status ?? 'want_to_read');
     setQuickCurrentPage(data.current_page ?? 0);
+    setQuickRating(data.rating ?? 0);
   }
 
   async function handleSaveQuickReading() {
     setSaving(true);
     setError('');
     try {
-      await updateMyBook(entry.id, {
+      const updated = await updateMyBook(entry.id, {
         status: quickStatus,
         current_page: Number(quickCurrentPage || 0),
+        rating: quickStatus === 'read' ? Number(quickRating || 0) : 0,
       });
       setEntry(updated.data);
       syncQuickForm(updated.data);
@@ -115,9 +120,10 @@ export default function BookDetailPage() {
         await uploadBookCover(entry.book_id, coverFile);
       }
 
-      const updated = await updateMyBook(entry.id, {
+      await updateMyBook(entry.id, {
         status: editForm.status,
         current_page: Number(editForm.current_page || 0),
+        rating: editForm.status === 'read' ? Number(editForm.rating || 0) : 0,
         page_count: editForm.page_count === '' ? null : Number(editForm.page_count),
         started_at: editForm.started_at || null,
         finished_at: editForm.finished_at || null,
@@ -198,6 +204,13 @@ export default function BookDetailPage() {
             <Info label="Publicación" value={entry.published_date || '—'} />
           </div>
 
+          {entry.status === 'read' && (
+            <div className="rounded-xl bg-slate-50 p-4">
+              <h2 className="mb-2 font-semibold text-slate-800">Puntuación</h2>
+              <StarRating value={entry.rating || 0} disabled />
+            </div>
+          )}
+
           {entry.page_count ? (
             <div>
               <div className="mb-2 flex justify-between text-sm text-slate-600">
@@ -236,6 +249,12 @@ export default function BookDetailPage() {
                   onChange={(e) => setQuickCurrentPage(e.target.value)}
                 />
               </div>
+              {quickStatus === 'read' && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Puntuación</label>
+                  <StarRating value={quickRating} onChange={setQuickRating} />
+                </div>
+              )}
               <button
                 type="button"
                 disabled={saving}
@@ -295,6 +314,16 @@ export default function BookDetailPage() {
                 <EditField label="Fecha inicio de lectura" type="date" value={editForm.started_at} onChange={(value) => setEditForm((form) => ({ ...form, started_at: value }))} />
                 <EditField label="Fecha fin de lectura" type="date" value={editForm.finished_at} onChange={(value) => setEditForm((form) => ({ ...form, finished_at: value }))} />
               </div>
+              {editForm.status === 'read' && (
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Puntuación</label>
+                  <StarRating
+                    value={editForm.rating}
+                    onChange={(value) => setEditForm((form) => ({ ...form, rating: value }))}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Selecciona de 0 a 5 estrellas.</p>
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" className="rounded-lg border px-4 py-2 text-sm" onClick={() => setEditOpen(false)}>
                   Cancelar

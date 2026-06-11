@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, LogOut, Menu, PlusCircle, Users, X } from 'lucide-react';
+import { BookOpen, Flame, Home, LogOut, Menu, PlusCircle, UserPlus, Users, X } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 import { getNavForRole } from '../navigation.js';
 
@@ -12,8 +12,11 @@ export default function AppLayout() {
   const nav = getNavForRole(role);
   const current = nav.find((item) => location.pathname.startsWith(item.url));
   const icons = {
+    home: Home,
     library: BookOpen,
     add: PlusCircle,
+    challenges: Flame,
+    friends: UserPlus,
     users: Users,
   };
 
@@ -78,7 +81,7 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="hidden text-right text-sm sm:block">
-            <div className="font-semibold">{user?.username}</div>
+            <div className="font-semibold">{user?.full_name?.trim() || user?.username}</div>
             <div className="text-xs capitalize text-white/65">{role}</div>
           </div>
           <button type="button" onClick={handleLogout} className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/15 px-3 py-2 text-sm font-medium hover:bg-white/25">

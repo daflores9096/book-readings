@@ -54,11 +54,15 @@ class AuthController
     public function me(): void
     {
         $user = AuthMiddleware::verifyToken();
+        $repo = new \App\Repositories\UserRepository();
+        $dbUser = $repo->findById((int)$user->sub);
+
         Response::json([
             'status' => 'success',
             'data' => [
                 'id' => (int)$user->sub,
                 'username' => $user->username ?? null,
+                'full_name' => $dbUser['full_name'] ?? null,
                 'role_id' => (int)$user->role_id,
                 'role' => AuthMiddleware::roleNameFromUser($user),
             ],
