@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import StarRating from '../components/StarRating.jsx';
@@ -26,7 +26,6 @@ export default function HomePage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [addingBookIds, setAddingBookIds] = useState({});
-  const loadMoreRef = useRef(null);
 
   async function load() {
     setLoading(true);
@@ -85,23 +84,6 @@ export default function HomePage() {
     load();
   }, []);
 
-  useEffect(() => {
-    const node = loadMoreRef.current;
-    if (!node) return undefined;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          loadMore();
-        }
-      },
-      { rootMargin: '320px 0px' },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasMore, items.length, loading, loadingMore]);
-
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <PageHeader title="Inicio" description="Actividad tuya y de tus amigos." />
@@ -129,8 +111,14 @@ export default function HomePage() {
               onAddWantToRead={() => handleAddWantToRead(item)}
             />
           ))}
-          <div ref={loadMoreRef} className="py-2 text-center text-sm text-slate-500">
-            {loadingMore ? 'Cargando más actividad...' : hasMore ? 'Desplázate para cargar más' : 'No hay más actividad'}
+          <div className="py-2 text-center">
+            {hasMore ? (
+              <Button type="button" variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? 'Cargando...' : 'Mostrar más'}
+              </Button>
+            ) : (
+              <p className="text-sm text-slate-500">No hay más actividad</p>
+            )}
           </div>
         </div>
       )}
