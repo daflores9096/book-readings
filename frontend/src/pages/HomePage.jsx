@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import StarRating from '../components/StarRating.jsx';
@@ -15,24 +15,48 @@ import {
 import { useAuth } from '../auth.jsx';
 import { Alert, Badge, Button, Card, EmptyState, PageHeader, Progress } from '../components/ui.jsx';
 
+const FEED_PAGE_SIZE = 20;
+
 export default function HomePage() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [addingBookIds, setAddingBookIds] = useState({});
+  const loadMoreRef = useRef(null);
 
   async function load() {
     setLoading(true);
     setError('');
     try {
-      const res = await getActivityFeed({ limit: 10 });
-      setItems(res.data ?? []);
+      const res = await getActivityFeed({ limit: FEED_PAGE_SIZE, offset: 0 });
+      const nextItems = res.data ?? [];
+      setItems(nextItems);
+      setHasMore(nextItems.length === FEED_PAGE_SIZE);
     } catch (err) {
       setError(err.message || 'No se pudo cargar la actividad');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMore() {
+    if (loading || loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    setError('');
+    try {
+      const res = await getActivityFeed({ limit: FEED_PAGE_SIZE, offset: items.length });
+      const nextItems = res.data ?? [];
+      setItems((current) => [...current, ...nextItems]);
+      setHasMore(nextItems.length === FEED_PAGE_SIZE);
+    } catch (err) {
+      setError(err.message || 'No se pudo cargar más actividad');
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -61,6 +85,23 @@ export default function HomePage() {
     load();
   }, []);
 
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: '320px 0px' },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, items.length, loading, loadingMore]);
+
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <PageHeader title="Inicio" description="Actividad tuya y de tus amigos." />
@@ -88,6 +129,9 @@ export default function HomePage() {
               onAddWantToRead={() => handleAddWantToRead(item)}
             />
           ))}
+          <div ref={loadMoreRef} className="py-2 text-center text-sm text-slate-500">
+            {loadingMore ? 'Cargando más actividad...' : hasMore ? 'Desplázate para cargar más' : 'No hay más actividad'}
+          </div>
         </div>
       )}
     </div>

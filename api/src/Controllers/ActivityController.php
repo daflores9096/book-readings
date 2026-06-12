@@ -17,7 +17,7 @@ class ActivityController
     public function feed(): void
     {
         $user = AuthMiddleware::verifyToken();
-        $limit = min(100, max(1, (int)($_GET['limit'] ?? 10)));
+        $limit = min(100, max(1, (int)($_GET['limit'] ?? 20)));
         $offset = max(0, (int)($_GET['offset'] ?? 0));
 
         Response::json([

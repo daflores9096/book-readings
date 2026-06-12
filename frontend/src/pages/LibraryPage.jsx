@@ -7,7 +7,7 @@ import { SHELF_TABS, authorsLabel, coverSrc, progressPercent } from '../navigati
 import { Alert, Button, Card, EmptyState, PageHeader, Progress, Tabs } from '../components/ui.jsx';
 
 export default function LibraryPage() {
-  const [activeTab, setActiveTab] = useState('want_to_read');
+  const [activeTab, setActiveTab] = useState('reading');
   const [entries, setEntries] = useState([]);
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
