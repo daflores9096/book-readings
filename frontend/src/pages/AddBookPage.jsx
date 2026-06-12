@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { addMyBook, createBook, searchBooks } from '../api.js';
 import { authorsLabel, coverSrc } from '../navigation.js';
+import IsbnScanner from '../components/IsbnScanner.jsx';
 import { Alert, Button, Card, PageHeader } from '../components/ui.jsx';
 
 export default function AddBookPage() {
@@ -15,19 +16,19 @@ export default function AddBookPage() {
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
 
-  async function handleSearch(e) {
-    e.preventDefault();
+  async function performSearch(type, value) {
     setError('');
     setNotFound(false);
     setResults([]);
     setSelected(null);
-    if (!query.trim()) {
+    const trimmedQuery = value.trim();
+    if (!trimmedQuery) {
       setError('Ingresa un texto de búsqueda');
       return;
     }
     setLoading(true);
     try {
-      const res = await searchBooks(searchType, query.trim());
+      const res = await searchBooks(type, trimmedQuery);
       const foundResults = res.data.results ?? [];
       setResults(foundResults);
       setSelected(foundResults[0] ?? null);
@@ -40,6 +41,17 @@ export default function AddBookPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    await performSearch(searchType, query);
+  }
+
+  async function handleScannedIsbn(isbn) {
+    setSearchType('isbn');
+    setQuery(isbn);
+    await performSearch('isbn', isbn);
   }
 
   async function handleAdd() {
@@ -120,6 +132,12 @@ export default function AddBookPage() {
             value={loading ? 'Buscando…' : 'Buscar'}
           />
         </div>
+        {searchType === 'isbn' && (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <IsbnScanner onDetected={handleScannedIsbn} disabled={loading} />
+            <p className="text-xs text-slate-500">Usa la cámara del celular para leer el código de barras ISBN.</p>
+          </div>
+        )}
         </form>
       </Card>
 

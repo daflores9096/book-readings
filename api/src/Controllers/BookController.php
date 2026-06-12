@@ -281,7 +281,14 @@ class BookController
             Response::error('No se pudo procesar la imagen', 400);
         }
 
+        $previousPath = $book['cover_path'] ?? null;
         $this->bookRepository->updateCoverPath($id, $relativePath);
+
+        if (!$this->deletePreviousCover($previousPath, $relativePath)) {
+            $this->bookRepository->updateCoverPath($id, (string)$previousPath);
+            @unlink($absolutePath);
+            Response::error('No se pudo eliminar la portada anterior del servidor', 500);
+        }
 
         Response::json([
             'status' => 'success',
@@ -303,5 +310,34 @@ class BookController
             UPLOAD_ERR_EXTENSION => 'Una extensión de PHP detuvo la subida de la imagen',
             default => 'Error desconocido al subir la portada',
         };
+    }
+
+    private function deletePreviousCover(?string $previousPath, string $newPath): bool
+    {
+        if (!$previousPath || $previousPath === $newPath || str_starts_with($previousPath, 'http')) {
+            return true;
+        }
+
+        $publicDir = realpath(__DIR__ . '/../../public');
+        $coversDir = realpath(__DIR__ . '/../../public/uploads/covers');
+        if (!$publicDir || !$coversDir) {
+            return false;
+        }
+
+        $normalizedPath = ltrim(str_replace('\\', '/', $previousPath), '/');
+        if (!str_starts_with($normalizedPath, 'uploads/covers/')) {
+            return true;
+        }
+
+        $absolutePath = realpath($publicDir . '/' . $normalizedPath);
+        if (!$absolutePath || !str_starts_with($absolutePath, $coversDir . DIRECTORY_SEPARATOR)) {
+            return true;
+        }
+
+        if (is_file($absolutePath)) {
+            return @unlink($absolutePath);
+        }
+
+        return true;
     }
 }
