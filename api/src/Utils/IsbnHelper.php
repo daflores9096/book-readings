@@ -32,10 +32,25 @@ class IsbnHelper
         for ($i = 0; $i < 9; $i++) {
             $sum += (int)$core[$i] * (10 - $i);
         }
-        $check = 11 - ($sum % 11);
+        $check = (11 - ($sum % 11)) % 11;
         $checkChar = $check === 10 ? 'X' : (string)$check;
 
         return $core . $checkChar;
+    }
+
+    public static function normalizeIsbn10(string $raw): ?string
+    {
+        $value = strtoupper(trim(str_replace('-', '', $raw)));
+        if ($value === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d{9}[\dX]$/', $value)) {
+            return $value;
+        }
+
+        $isbn13 = self::normalize($raw);
+        return $isbn13 ? self::toIsbn10($isbn13) : null;
     }
 
     private static function toIsbn13(string $isbn10): ?string

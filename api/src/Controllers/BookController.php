@@ -141,8 +141,8 @@ class BookController
         }
 
         $isbn13 = null;
-        if (!empty($input['isbn13']) || !empty($input['isbn'])) {
-            $isbn13 = IsbnHelper::normalize((string)($input['isbn13'] ?? $input['isbn']));
+        if (!empty($input['isbn13']) || !empty($input['isbn']) || !empty($input['isbn10'])) {
+            $isbn13 = IsbnHelper::normalize((string)($input['isbn13'] ?? $input['isbn'] ?? $input['isbn10']));
             if (!$isbn13) {
                 Response::error('ISBN inválido', 400);
             }
@@ -166,9 +166,15 @@ class BookController
             Response::error('page_count inválido', 400);
         }
 
+        $isbn10 = null;
+        if ($isbn13) {
+            $isbn10 = IsbnHelper::toIsbn10($isbn13)
+                ?? IsbnHelper::normalizeIsbn10((string)($input['isbn10'] ?? ''));
+        }
+
         $id = $this->bookRepository->create([
             'isbn13' => $isbn13,
-            'isbn10' => $isbn13 ? IsbnHelper::toIsbn10($isbn13) : null,
+            'isbn10' => $isbn10,
             'title' => $title,
             'authors' => $authors,
             'page_count' => $pageCount,
@@ -202,8 +208,8 @@ class BookController
         }
 
         $isbn13 = null;
-        if (!empty($input['isbn13']) || !empty($input['isbn'])) {
-            $isbn13 = IsbnHelper::normalize((string)($input['isbn13'] ?? $input['isbn']));
+        if (!empty($input['isbn13']) || !empty($input['isbn']) || !empty($input['isbn10'])) {
+            $isbn13 = IsbnHelper::normalize((string)($input['isbn13'] ?? $input['isbn'] ?? $input['isbn10']));
             if (!$isbn13) {
                 Response::error('ISBN inválido', 400);
             }
@@ -225,9 +231,15 @@ class BookController
             }
         }
 
+        $isbn10 = null;
+        if ($isbn13) {
+            $isbn10 = IsbnHelper::toIsbn10($isbn13)
+                ?? IsbnHelper::normalizeIsbn10((string)($input['isbn10'] ?? ''));
+        }
+
         $this->bookRepository->update($id, [
             'isbn13' => $isbn13,
-            'isbn10' => $isbn13 ? IsbnHelper::toIsbn10($isbn13) : null,
+            'isbn10' => $isbn10,
             'title' => $title,
             'authors' => $authors,
             'page_count' => $pageCount,
