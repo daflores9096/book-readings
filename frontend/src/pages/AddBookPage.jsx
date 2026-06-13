@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { addMyBook, createBook, searchBooks } from '../api.js';
-import { authorsLabel, coverSrc } from '../navigation.js';
+import { authorsLabel, coverSrc, libraryShelfPath } from '../navigation.js';
 import { Alert, Button, Card, PageHeader } from '../components/ui.jsx';
 
 export default function AddBookPage() {
@@ -56,8 +56,8 @@ export default function AddBookPage() {
         });
         book = created.data;
       }
-      const added = await addMyBook({ book_id: book.id, status });
-      navigate(`/books/${added.data.id}`);
+      await addMyBook({ book_id: book.id, status });
+      navigate(libraryShelfPath(status));
     } catch (err) {
       setError(err.message || 'No se pudo agregar el libro');
     } finally {

@@ -5,7 +5,7 @@ import Modal from '../components/Modal.jsx';
 import CoverCapture from '../components/CoverCapture.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { deleteMyBook, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
-import { authorsLabel, coverSrc, progressPercent } from '../navigation.js';
+import { authorsLabel, coverSrc, libraryShelfPath, progressPercent } from '../navigation.js';
 import { Alert, Button, Card, Field, Input, PageHeader, Progress, Select, Textarea } from '../components/ui.jsx';
 
 const STATUS_LABELS = {
@@ -90,6 +90,7 @@ export default function BookDetailPage() {
       });
       setEntry(updated.data);
       syncQuickForm(updated.data);
+      navigate(libraryShelfPath(updated.data.status ?? quickStatus));
     } catch (err) {
       setError(err.message || 'No se pudo actualizar la lectura');
     } finally {
@@ -121,7 +122,7 @@ export default function BookDetailPage() {
         await uploadBookCover(entry.book_id, coverFile);
       }
 
-      await updateMyBook(entry.id, {
+      const updated = await updateMyBook(entry.id, {
         status: editForm.status,
         current_page: Number(editForm.current_page || 0),
         rating: editForm.status === 'read' ? Number(editForm.rating || 0) : 0,
@@ -132,7 +133,7 @@ export default function BookDetailPage() {
 
       setEditOpen(false);
       setCoverFile(null);
-      await load();
+      navigate(libraryShelfPath(updated.data?.status ?? editForm.status));
     } catch (err) {
       setError(err.message || 'No se pudo guardar la edición');
     } finally {
@@ -144,7 +145,7 @@ export default function BookDetailPage() {
     if (!confirm('¿Quitar este libro de tu biblioteca?')) return;
     try {
       await deleteMyBook(entry.id);
-      navigate('/library');
+      navigate(libraryShelfPath(entry.status));
     } catch (err) {
       setError(err.message || 'No se pudo eliminar');
     }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CoverCapture from '../components/CoverCapture.jsx';
 import { addMyBook, createBook, uploadBookCover } from '../api.js';
+import { libraryShelfPath } from '../navigation.js';
 import { Alert, Button, Card, Field as UiField, Input, PageHeader, Select, Textarea } from '../components/ui.jsx';
 
 export default function ManualBookPage() {
@@ -53,8 +54,8 @@ export default function ManualBookPage() {
         await uploadBookCover(book.id, coverFile);
       }
 
-      const added = await addMyBook({ book_id: book.id, status: form.status });
-      navigate(`/books/${added.data.id}`);
+      await addMyBook({ book_id: book.id, status: form.status });
+      navigate(libraryShelfPath(form.status));
     } catch (err) {
       setError(err.message || 'No se pudo crear el libro');
     } finally {

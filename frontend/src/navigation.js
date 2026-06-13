@@ -18,6 +18,13 @@ export const SHELF_TABS = [
   { id: 'read', label: 'Leídos' },
 ];
 
+export const SHELF_IDS = SHELF_TABS.map((tab) => tab.id);
+
+export function libraryShelfPath(status) {
+  const shelf = SHELF_IDS.includes(status) ? status : 'reading';
+  return `/library?status=${encodeURIComponent(shelf)}`;
+}
+
 export function coverSrc(book) {
   if (book?.cover_path) {
     return book.cover_path.startsWith('http') ? book.cover_path : `/${book.cover_path.replace(/^\//, '')}`;
