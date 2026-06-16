@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen } from 'lucide-react';
+import { BookMarked, BookOpen, Library, Ruler } from 'lucide-react';
 import StarRating from '../components/StarRating.jsx';
-import { addMyBook, getActivityFeed } from '../api.js';
+import { addMyBook, getActivityFeed, getMyBooks } from '../api.js';
 import {
   activityMessage,
   STATUS_BADGE,
@@ -17,17 +17,54 @@ import { Alert, Badge, Button, Card, EmptyState, PageHeader, Progress } from '..
 
 const FEED_PAGE_SIZE = 20;
 
+function computeReadingStats(books) {
+  const year = new Date().getFullYear();
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+
+  const readThisYear = books.filter((book) => {
+    if (!book.finished_at) return false;
+    return book.finished_at >= yearStart && book.finished_at <= yearEnd;
+  });
+
+  const withPages = readThisYear.filter((book) => Number(book.page_count) > 0);
+
+  let longestThisYear = null;
+  let shortestThisYear = null;
+
+  for (const book of withPages) {
+    const pages = Number(book.page_count);
+    if (!longestThisYear || pages > Number(longestThisYear.page_count)) {
+      longestThisYear = book;
+    }
+    if (!shortestThisYear || pages < Number(shortestThisYear.page_count)) {
+      shortestThisYear = book;
+    }
+  }
+
+  return {
+    year,
+    readThisYear: readThisYear.length,
+    totalRead: books.length,
+    longestThisYear,
+    shortestThisYear,
+  };
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
+  const [readBooks, setReadBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [addingBookIds, setAddingBookIds] = useState({});
+  const stats = useMemo(() => computeReadingStats(readBooks), [readBooks]);
 
-  async function load() {
+  async function loadFeed() {
     setLoading(true);
     setError('');
     try {
@@ -39,6 +76,18 @@ export default function HomePage() {
       setError(err.message || 'No se pudo cargar la actividad');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadStats() {
+    setStatsLoading(true);
+    try {
+      const res = await getMyBooks('read');
+      setReadBooks(res.data ?? []);
+    } catch (err) {
+      setError((current) => current || err.message || 'No se pudieron cargar tus estadísticas');
+    } finally {
+      setStatsLoading(false);
     }
   }
 
@@ -81,18 +130,21 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    load();
+    loadFeed();
+    loadStats();
   }, []);
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <PageHeader title="Inicio" description="Actividad tuya y de tus amigos." />
 
+      <ReadingStatsCards stats={stats} loading={statsLoading} />
+
       {error && <Alert tone="error">{error}</Alert>}
       {message && <Alert tone="success">{message}</Alert>}
 
       {loading ? (
-        <Card className="p-6 text-sm text-slate-600">Cargando...</Card>
+        <Card className="p-6 text-sm text-slate-600">Cargando actividad...</Card>
       ) : items.length === 0 ? (
         <EmptyState
           icon={BookOpen}
@@ -124,6 +176,85 @@ export default function HomePage() {
       )}
     </div>
   );
+}
+
+function ReadingStatsCards({ stats, loading }) {
+  if (loading) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="p-4">
+            <div className="h-16 animate-pulse rounded-lg bg-slate-100" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <StatCard
+        icon={BookMarked}
+        label={`Leídos en ${stats.year}`}
+        value={String(stats.readThisYear)}
+        hint="Libros marcados como leídos este año"
+      />
+      <StatCard
+        icon={Library}
+        label="Total leídos"
+        value={String(stats.totalRead)}
+        hint="Todos los libros que has terminado"
+      />
+      <StatCard
+        icon={Ruler}
+        label="Más extenso este año"
+        value={stats.longestThisYear ? `${stats.longestThisYear.page_count} págs.` : '—'}
+        hint={stats.longestThisYear?.title ?? 'Sin libros con páginas registradas este año'}
+        bookId={stats.longestThisYear?.id}
+        book={stats.longestThisYear}
+      />
+      <StatCard
+        icon={BookOpen}
+        label="Más corto este año"
+        value={stats.shortestThisYear ? `${stats.shortestThisYear.page_count} págs.` : '—'}
+        hint={stats.shortestThisYear?.title ?? 'Sin libros con páginas registradas este año'}
+        bookId={stats.shortestThisYear?.id}
+        book={stats.shortestThisYear}
+      />
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, hint, bookId, book }) {
+  const cover = book ? coverSrc(book) : null;
+
+  const content = (
+    <Card className="h-full p-4 transition hover:border-brand-200 hover:shadow-sm">
+      <div className="flex items-stretch gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+            <Icon size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="mt-1 text-2xl font-bold text-slate-950">{value}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-slate-600">{hint}</p>
+          </div>
+        </div>
+        {cover ? (
+          <div className="h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+            <img src={cover} alt={book.title} className="h-full w-full object-cover" />
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+
+  if (bookId) {
+    return <Link to={`/books/${bookId}`} className="block">{content}</Link>;
+  }
+
+  return content;
 }
 
 function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
