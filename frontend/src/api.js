@@ -201,3 +201,54 @@ export function deleteChallenge(id) {
 export function getChallengeBooks(id) {
   return api(`/api/challenges/${id}/books`);
 }
+
+function buildDownloadFilename(contentDisposition) {
+  const match = /filename="?([^"]+)"?/i.exec(contentDisposition ?? '');
+  return match?.[1] || `book-readings-backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.sql`;
+}
+
+export async function downloadBackup() {
+  const token = getToken();
+  const url = buildUrl('/api/backups/export');
+  let res;
+
+  try {
+    res = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch {
+    throw new Error('No se pudo conectar con la API para crear el respaldo.');
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    let message = `HTTP ${res.status}`;
+    try {
+      const data = text ? JSON.parse(text) : null;
+      message = data?.message || data?.error || message;
+    } catch {
+      if (text) message = text;
+    }
+    if (res.status === 401) {
+      redirectToLogin();
+    }
+    throw new Error(message);
+  }
+
+  const blob = await res.blob();
+  const filename = buildDownloadFilename(res.headers.get('Content-Disposition'));
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
+export function restoreBackup(file) {
+  const formData = new FormData();
+  formData.append('backup', file);
+  return api('/api/backups/restore', { method: 'POST', body: formData, isFormData: true });
+}

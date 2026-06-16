@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, Flame, Home, LogOut, Menu, PlusCircle, UserPlus, Users, X } from 'lucide-react';
+import { BookOpen, DatabaseBackup, Flame, Home, LogOut, Menu, PlusCircle, UserPlus, Users, X } from 'lucide-react';
 import { useAuth } from '../auth.jsx';
 import { getNavForRole } from '../navigation.js';
 import { Button, cx } from '../components/ui.jsx';
@@ -19,6 +19,7 @@ export default function AppLayout() {
     challenges: Flame,
     friends: UserPlus,
     users: Users,
+    backups: DatabaseBackup,
   };
   const mobileNav = [
     { id: 'home', title: 'Inicio', url: '/home', icon: Home },

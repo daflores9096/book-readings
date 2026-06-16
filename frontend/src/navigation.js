@@ -5,6 +5,7 @@ export const navItems = [
   { id: 'challenges', title: 'Desafíos', url: '/challenges' },
   { id: 'friends', title: 'Mis amigos', url: '/friends' },
   { id: 'users', title: 'Usuarios', url: '/users', roles: ['admin'] },
+  { id: 'backups', title: 'Respaldos', url: '/backups', roles: ['admin'] },
 ];
 
 export function getNavForRole(roleName) {

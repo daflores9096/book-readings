@@ -11,6 +11,7 @@ import AddBookPage from './pages/AddBookPage.jsx';
 import ManualBookPage from './pages/ManualBookPage.jsx';
 import BookDetailPage from './pages/BookDetailPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
+import BackupsPage from './pages/BackupsPage.jsx';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -36,6 +37,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole roles={['admin']}>
             <UsersPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'backups',
+        element: (
+          <RequireRole roles={['admin']}>
+            <BackupsPage />
           </RequireRole>
         ),
       },

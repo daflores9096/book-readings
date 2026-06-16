@@ -7,3 +7,4 @@ require_once __DIR__ . '/my-books.php';
 require_once __DIR__ . '/activities.php';
 require_once __DIR__ . '/friends.php';
 require_once __DIR__ . '/challenges.php';
+require_once __DIR__ . '/backups.php';

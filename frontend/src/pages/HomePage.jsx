@@ -135,45 +135,64 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <PageHeader title="Inicio" description="Actividad tuya y de tus amigos." />
-
-      <ReadingStatsCards stats={stats} loading={statsLoading} />
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader title="Inicio" />
 
       {error && <Alert tone="error">{error}</Alert>}
       {message && <Alert tone="success">{message}</Alert>}
 
-      {loading ? (
-        <Card className="p-6 text-sm text-slate-600">Cargando actividad...</Card>
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={BookOpen}
-          title="Aún no hay actividad."
-          description="Agrega libros a tu biblioteca o conecta con amigos para ver actualizaciones aquí."
-          action={<Button as={Link} to="/friends" variant="secondary">Ir a Mis amigos</Button>}
+      <section className="space-y-4">
+        <SectionHeader title="Destacado" />
+        <ReadingStatsCards stats={stats} loading={statsLoading} />
+      </section>
+
+      <section className="space-y-4">
+        <SectionHeader
+          title="Actividad Reciente"
+          description="Actividad tuya y de tus amigos."
         />
-      ) : (
-        <div className="space-y-4">
-          {items.map((item) => (
-            <ActivityCard
-              key={item.id}
-              item={item}
-              currentUserId={Number(user?.id)}
-              isAdding={!!addingBookIds[item.book_id]}
-              onAddWantToRead={() => handleAddWantToRead(item)}
-            />
-          ))}
-          <div className="py-2 text-center">
-            {hasMore ? (
-              <Button type="button" variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? 'Cargando...' : 'Mostrar más'}
-              </Button>
-            ) : (
-              <p className="text-sm text-slate-500">No hay más actividad</p>
-            )}
+
+        {loading ? (
+          <Card className="p-6 text-sm text-slate-600">Cargando actividad...</Card>
+        ) : items.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title="Aún no hay actividad."
+            description="Agrega libros a tu biblioteca o conecta con amigos para ver actualizaciones aquí."
+            action={<Button as={Link} to="/friends" variant="secondary">Ir a Mis amigos</Button>}
+          />
+        ) : (
+          <div className="space-y-4">
+            {items.map((item) => (
+              <ActivityCard
+                key={item.id}
+                item={item}
+                currentUserId={Number(user?.id)}
+                isAdding={!!addingBookIds[item.book_id]}
+                onAddWantToRead={() => handleAddWantToRead(item)}
+              />
+            ))}
+            <div className="py-2 text-center">
+              {hasMore ? (
+                <Button type="button" variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? 'Cargando...' : 'Mostrar más'}
+                </Button>
+              ) : (
+                <p className="text-sm text-slate-500">No hay más actividad</p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </section>
+    </div>
+  );
+}
+
+function SectionHeader({ title, description }) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold tracking-tight text-slate-950">{title}</h2>
+      {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
     </div>
   );
 }
@@ -183,9 +202,7 @@ function ReadingStatsCards({ stats, loading }) {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="p-4">
-            <div className="h-16 animate-pulse rounded-lg bg-slate-100" />
-          </Card>
+          <div key={index} className="h-32 animate-pulse rounded-2xl bg-slate-200/70" />
         ))}
       </div>
     );
@@ -197,27 +214,29 @@ function ReadingStatsCards({ stats, loading }) {
         icon={BookMarked}
         label={`Leídos en ${stats.year}`}
         value={String(stats.readThisYear)}
-        hint="Libros marcados como leídos este año"
+        hint="Libros terminados este año"
       />
       <StatCard
         icon={Library}
         label="Total leídos"
         value={String(stats.totalRead)}
-        hint="Todos los libros que has terminado"
+        hint="Tu historial completo de lectura"
       />
       <StatCard
         icon={Ruler}
         label="Más extenso este año"
-        value={stats.longestThisYear ? `${stats.longestThisYear.page_count} págs.` : '—'}
+        value={stats.longestThisYear ? `${stats.longestThisYear.page_count}` : '—'}
         hint={stats.longestThisYear?.title ?? 'Sin libros con páginas registradas este año'}
+        suffix={stats.longestThisYear ? 'págs.' : null}
         bookId={stats.longestThisYear?.id}
         book={stats.longestThisYear}
       />
       <StatCard
         icon={BookOpen}
         label="Más corto este año"
-        value={stats.shortestThisYear ? `${stats.shortestThisYear.page_count} págs.` : '—'}
+        value={stats.shortestThisYear ? `${stats.shortestThisYear.page_count}` : '—'}
         hint={stats.shortestThisYear?.title ?? 'Sin libros con páginas registradas este año'}
+        suffix={stats.shortestThisYear ? 'págs.' : null}
         bookId={stats.shortestThisYear?.id}
         book={stats.shortestThisYear}
       />
@@ -225,29 +244,31 @@ function ReadingStatsCards({ stats, loading }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, hint, bookId, book }) {
+function StatCard({ icon: Icon, label, value, hint, suffix, bookId, book }) {
   const cover = book ? coverSrc(book) : null;
 
   const content = (
-    <Card className="h-full p-4 transition hover:border-brand-200 hover:shadow-sm">
-      <div className="flex items-stretch gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-            <Icon size={18} />
+    <div className="group relative h-full overflow-hidden rounded-2xl border border-slate-800/60 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-4 text-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.95)] transition duration-300 hover:-translate-y-0.5 hover:border-slate-700 hover:shadow-[0_22px_48px_-24px_rgba(15,23,42,0.9)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_42%)]" />
+      <div className="relative flex items-stretch gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Icon size={15} strokeWidth={1.75} />
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em]">{label}</p>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-1 text-2xl font-bold text-slate-950">{value}</p>
-            <p className="mt-1 line-clamp-2 text-sm text-slate-600">{hint}</p>
+          <div className="mt-3 flex items-end gap-1.5">
+            <p className="text-3xl font-semibold tracking-tight text-white">{value}</p>
+            {suffix && <span className="pb-1 text-sm font-medium text-slate-400">{suffix}</span>}
           </div>
+          <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-400">{hint}</p>
         </div>
         {cover ? (
-          <div className="h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+          <div className="h-24 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-inner">
             <img src={cover} alt={book.title} className="h-full w-full object-cover" />
           </div>
         ) : null}
       </div>
-    </Card>
+    </div>
   );
 
   if (bookId) {
