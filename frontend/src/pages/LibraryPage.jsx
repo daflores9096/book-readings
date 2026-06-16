@@ -3,8 +3,17 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowUpDown, BookOpen, Flame, Trophy } from 'lucide-react';
 import StarRating from '../components/StarRating.jsx';
 import { getActiveChallenge, getMyBooks } from '../api.js';
-import { SHELF_IDS, SHELF_TABS, authorsLabel, coverSrc, progressPercent } from '../navigation.js';
-import { Alert, Button, Card, EmptyState, PageHeader, Progress, Tabs } from '../components/ui.jsx';
+import {
+  LIBRARY_TAB_IDS,
+  SHELF_TABS,
+  STATUS_BADGE,
+  authorsLabel,
+  coverSrc,
+  progressPercent,
+} from '../navigation.js';
+import { Alert, Badge, Button, Card, EmptyState, PageHeader, Progress, Tabs } from '../components/ui.jsx';
+
+const PAGE_SIZE = 20;
 
 const SORT_OPTIONS = {
   read: [
@@ -71,27 +80,55 @@ function sortEntries(entries, sortBy, direction) {
   });
 }
 
+function countByShelf(entries) {
+  const counts = { reading: 0, want_to_read: 0, read: 0, all: entries.length };
+  for (const entry of entries) {
+    if (entry.status in counts) {
+      counts[entry.status] += 1;
+    }
+  }
+  return counts;
+}
+
 export default function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedShelf = searchParams.get('status');
-  const initialTab = SHELF_IDS.includes(requestedShelf) ? requestedShelf : 'reading';
+  const initialTab = LIBRARY_TAB_IDS.includes(requestedShelf) ? requestedShelf : 'reading';
   const [activeTab, setActiveTab] = useState(initialTab);
   const initialSort = defaultSortForShelf(initialTab);
   const [sortBy, setSortBy] = useState(initialSort);
   const [sortDirection, setSortDirection] = useState(defaultDirectionForSort(initialSort));
-  const [entries, setEntries] = useState([]);
+  const [allEntries, setAllEntries] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const shelfCounts = useMemo(() => countByShelf(allEntries), [allEntries]);
+  const tabItems = useMemo(
+    () => SHELF_TABS.map((tab) => ({
+      ...tab,
+      label: `${tab.label} (${shelfCounts[tab.id] ?? 0})`,
+    })),
+    [shelfCounts],
+  );
+
+  const entries = useMemo(() => {
+    if (activeTab === 'all') return allEntries;
+    return allEntries.filter((entry) => entry.status === activeTab);
+  }, [allEntries, activeTab]);
+
   const sortOptions = activeTab === 'read' ? SORT_OPTIONS.read : SORT_OPTIONS.default;
   const sortedEntries = useMemo(() => sortEntries(entries, sortBy, sortDirection), [entries, sortBy, sortDirection]);
+  const visibleEntries = useMemo(() => sortedEntries.slice(0, visibleCount), [sortedEntries, visibleCount]);
+  const hasMore = visibleCount < sortedEntries.length;
 
-  async function load(status) {
+  async function load() {
     setLoading(true);
     setError('');
     try {
-      const res = await getMyBooks(status);
-      setEntries(res.data ?? []);
+      const res = await getMyBooks();
+      setAllEntries(res.data ?? []);
     } catch (err) {
       setError(err.message || 'No se pudo cargar la biblioteca');
     } finally {
@@ -100,15 +137,23 @@ export default function LibraryPage() {
   }
 
   useEffect(() => {
-    load(activeTab);
+    load();
+  }, []);
+
+  useEffect(() => {
     const nextSort = defaultSortForShelf(activeTab);
     setSortBy(nextSort);
     setSortDirection(defaultDirectionForSort(nextSort));
+    setVisibleCount(PAGE_SIZE);
   }, [activeTab]);
 
   useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [sortBy, sortDirection]);
+
+  useEffect(() => {
     const shelf = searchParams.get('status');
-    if (SHELF_IDS.includes(shelf) && shelf !== activeTab) {
+    if (LIBRARY_TAB_IDS.includes(shelf) && shelf !== activeTab) {
       setActiveTab(shelf);
     }
   }, [searchParams, activeTab]);
@@ -127,6 +172,10 @@ export default function LibraryPage() {
     loadChallenge();
   }, []);
 
+  const emptyTitle = activeTab === 'all'
+    ? 'No tienes libros en tu biblioteca.'
+    : 'No tienes libros en esta estantería.';
+
   return (
     <div className="mx-auto max-w-7xl space-y-5">
       <PageHeader
@@ -138,7 +187,7 @@ export default function LibraryPage() {
       <ChallengeBanner challenge={challenge} />
 
       <Tabs
-        items={SHELF_TABS}
+        items={tabItems}
         activeId={activeTab}
         onChange={(shelf) => {
           setActiveTab(shelf);
@@ -151,7 +200,7 @@ export default function LibraryPage() {
       {loading ? (
         <Card className="p-6 text-sm text-slate-600">Cargando...</Card>
       ) : entries.length === 0 ? (
-        <EmptyState icon={BookOpen} title="No tienes libros en esta estantería." description="Agrega un libro o cambia de estante para ver tus lecturas." />
+        <EmptyState icon={BookOpen} title={emptyTitle} description="Agrega un libro o cambia de estante para ver tus lecturas." />
       ) : (
         <div className="space-y-4">
           <div className="flex justify-end">
@@ -185,7 +234,7 @@ export default function LibraryPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {sortedEntries.map((entry) => {
+            {visibleEntries.map((entry) => {
               const cover = coverSrc(entry);
               const progress = progressPercent(entry);
               return (
@@ -205,6 +254,11 @@ export default function LibraryPage() {
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate font-semibold text-slate-800">{entry.title}</h2>
                       <p className="mt-1 text-sm text-slate-500">{authorsLabel(entry.authors)}</p>
+                      {activeTab === 'all' && entry.status && (
+                        <Badge tone="brand" className="mt-2">
+                          {STATUS_BADGE[entry.status] || entry.status}
+                        </Badge>
+                      )}
                       {entry.page_count ? (
                         <div className="mt-3">
                           <div className="mb-1 flex justify-between text-xs text-slate-500">
@@ -226,6 +280,16 @@ export default function LibraryPage() {
                 </Link>
               );
             })}
+          </div>
+
+          <div className="py-2 text-center">
+            {hasMore ? (
+              <Button type="button" variant="secondary" size="sm" onClick={() => setVisibleCount((current) => current + PAGE_SIZE)}>
+                Mostrar más
+              </Button>
+            ) : sortedEntries.length > PAGE_SIZE ? (
+              <p className="text-sm text-slate-500">No hay más libros</p>
+            ) : null}
           </div>
         </div>
       )}

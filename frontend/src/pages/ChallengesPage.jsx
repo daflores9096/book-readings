@@ -21,7 +21,7 @@ export default function ChallengesPage() {
 
   const years = useMemo(() => {
     const year = now.getFullYear();
-    return [year - 1, year, year + 1, year + 2];
+    return Array.from({ length: 6 }, (_, index) => year - 3 + index);
   }, []);
 
   async function load() {

@@ -12,16 +12,19 @@ export function getNavForRole(roleName) {
   return navItems.filter((item) => !item.roles || item.roles.includes(role));
 }
 
+export const SHELF_STATUS_IDS = ['reading', 'want_to_read', 'read'];
+
 export const SHELF_TABS = [
   { id: 'reading', label: 'Leyendo' },
   { id: 'want_to_read', label: 'Quiero leer' },
   { id: 'read', label: 'Leídos' },
+  { id: 'all', label: 'Todos' },
 ];
 
-export const SHELF_IDS = SHELF_TABS.map((tab) => tab.id);
+export const LIBRARY_TAB_IDS = SHELF_TABS.map((tab) => tab.id);
 
 export function libraryShelfPath(status) {
-  const shelf = SHELF_IDS.includes(status) ? status : 'reading';
+  const shelf = SHELF_STATUS_IDS.includes(status) ? status : 'reading';
   return `/library?status=${encodeURIComponent(shelf)}`;
 }
 
