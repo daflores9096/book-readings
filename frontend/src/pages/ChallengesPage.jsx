@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, Trash2, Trophy } from 'lucide-react';
 import Modal from '../components/Modal.jsx';
 import { createChallenge, deleteChallenge, getChallenges } from '../api.js';
@@ -165,28 +166,51 @@ function ChallengeRow({ challenge, onDelete }) {
   const completed = Number(challenge.completed_books) || 0;
   const target = Number(challenge.target_books) || 1;
   const percent = Number(challenge.progress_percent) || 0;
+  const isCompleted = Boolean(challenge.is_completed);
 
   return (
-    <div className="rounded-xl border border-slate-100 p-4">
+    <div
+      className={`rounded-xl border p-4 transition ${
+        isCompleted
+          ? 'border-emerald-200 bg-emerald-50/70 hover:bg-emerald-50'
+          : 'border-slate-100 bg-white hover:bg-slate-50'
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <Link to={`/challenges/${challenge.id}`} className="min-w-0 flex-1">
           <div className="flex items-center gap-2 font-semibold text-slate-900">
-            <Trophy size={18} className="text-orange-500" />
+            <Trophy size={18} className={isCompleted ? 'text-emerald-600' : 'text-orange-500'} />
             {challenge.name}
           </div>
           <p className="mt-1 text-sm text-slate-500">{challenge.starts_at} al {challenge.ends_at}</p>
-        </div>
-        <button type="button" className="rounded-lg p-2 text-red-600 hover:bg-red-50" onClick={onDelete} aria-label="Eliminar desafío">
+          {isCompleted && (
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Desafío completado
+            </p>
+          )}
+        </Link>
+        <button
+          type="button"
+          className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+          onClick={onDelete}
+          aria-label="Eliminar desafío"
+        >
           <Trash2 size={16} />
         </button>
       </div>
-      <div className="mt-3">
+      <Link to={`/challenges/${challenge.id}`} className="mt-3 block">
         <div className="mb-1 flex justify-between text-sm">
           <span className="font-medium text-slate-700">{completed}/{target} libros</span>
-          <span className="font-semibold text-orange-600">{percent}%</span>
+          <span className={`font-semibold ${isCompleted ? 'text-emerald-700' : 'text-orange-600'}`}>
+            {percent}%
+          </span>
         </div>
-        <Progress value={percent} className="h-3" barClassName="bg-orange-500" />
-      </div>
+        <Progress
+          value={percent}
+          className="h-3"
+          barClassName={isCompleted ? 'bg-emerald-500' : 'bg-orange-500'}
+        />
+      </Link>
     </div>
   );
 }

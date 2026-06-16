@@ -27,6 +27,11 @@ if ($path === '/api/challenges' && $method === 'POST') {
     exit;
 }
 
+if (preg_match('#^/api/challenges/(\d+)/books$#', $path, $matches) && $method === 'GET') {
+    $controller->books((int)$matches[1]);
+    exit;
+}
+
 if (preg_match('#^/api/challenges/(\d+)$#', $path, $matches) && $method === 'DELETE') {
     $controller->delete((int)$matches[1]);
     exit;

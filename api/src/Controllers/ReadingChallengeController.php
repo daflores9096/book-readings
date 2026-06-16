@@ -48,4 +48,13 @@ class ReadingChallengeController
         $this->service->delete((int)$user->sub, $id);
         Response::noContent(204);
     }
+
+    public function books(int $id): void
+    {
+        $user = AuthMiddleware::verifyToken();
+        Response::json([
+            'status' => 'success',
+            'data' => $this->service->booksForChallenge((int)$user->sub, $id),
+        ]);
+    }
 }

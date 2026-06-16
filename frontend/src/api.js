@@ -197,3 +197,7 @@ export function createChallenge(payload) {
 export function deleteChallenge(id) {
   return api(`/api/challenges/${id}`, { method: 'DELETE' });
 }
+
+export function getChallengeBooks(id) {
+  return api(`/api/challenges/${id}/books`);
+}

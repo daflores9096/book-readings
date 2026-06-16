@@ -74,6 +74,23 @@ class ReadingChallengeService
         $this->repository->delete($id, $userId);
     }
 
+    public function booksForChallenge(int $userId, int $id): array
+    {
+        $challenge = $this->repository->findByIdForUser($id, $userId);
+        if (!$challenge) {
+            Response::error('Desafío no encontrado', 404);
+        }
+
+        return [
+            'challenge' => $this->withProgress($userId, $challenge),
+            'books' => $this->repository->listFinishedBooks(
+                $userId,
+                $challenge['starts_at'],
+                $challenge['ends_at'],
+            ),
+        ];
+    }
+
     private function withProgress(int $userId, array $challenge): array
     {
         $completed = $this->repository->countFinishedBooks($userId, $challenge['starts_at'], $challenge['ends_at']);
