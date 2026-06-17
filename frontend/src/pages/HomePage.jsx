@@ -211,18 +211,6 @@ function ReadingStatsCards({ stats, loading }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <StatCard
-        icon={BookMarked}
-        label={`Leídos en ${stats.year}`}
-        value={String(stats.readThisYear)}
-        hint="Libros terminados este año"
-      />
-      <StatCard
-        icon={Library}
-        label="Total leídos"
-        value={String(stats.totalRead)}
-        hint="Tu historial completo de lectura"
-      />
-      <StatCard
         icon={Ruler}
         label="Más extenso este año"
         value={stats.longestThisYear ? `${stats.longestThisYear.page_count}` : '—'}
@@ -239,6 +227,18 @@ function ReadingStatsCards({ stats, loading }) {
         suffix={stats.shortestThisYear ? 'págs.' : null}
         bookId={stats.shortestThisYear?.id}
         book={stats.shortestThisYear}
+      />
+      <StatCard
+        icon={BookMarked}
+        label={`Leídos en ${stats.year}`}
+        value={String(stats.readThisYear)}
+        hint="Libros terminados este año"
+      />
+      <StatCard
+        icon={Library}
+        label="Total leídos"
+        value={String(stats.totalRead)}
+        hint="Tu historial completo de lectura"
       />
     </div>
   );

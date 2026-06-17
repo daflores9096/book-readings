@@ -23,6 +23,11 @@ class ActivityService
         return $this->activityRepository->feedForUsers($userIds, $userId, $limit, $offset);
     }
 
+    public function removeForUserAndBook(int $userId, int $bookId): void
+    {
+        $this->activityRepository->deleteForUserAndBook($userId, $bookId);
+    }
+
     public function recordAdded(int $userId, array $entry, string $status): void
     {
         $type = match ($status) {

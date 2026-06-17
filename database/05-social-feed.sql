@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS reading_activities (
     metadata JSON NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_book_id) REFERENCES user_books(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_book_id) REFERENCES user_books(id) ON DELETE CASCADE,
     FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
     INDEX idx_activities_user_created (user_id, created_at DESC),
     INDEX idx_activities_created (created_at DESC)

@@ -163,6 +163,7 @@ class UserBookService
             Response::error('Registro no encontrado', 404);
         }
 
+        $this->activityService->removeForUserAndBook($userId, (int)$entry['book_id']);
         $this->userBookRepository->delete($userBookId);
     }
 }

@@ -30,6 +30,18 @@ class ActivityRepository
         return (int)$this->db->lastInsertId();
     }
 
+    public function deleteForUserAndBook(int $userId, int $bookId): void
+    {
+        $stmt = $this->db->prepare('
+            DELETE FROM reading_activities
+            WHERE user_id = :user_id AND book_id = :book_id
+        ');
+        $stmt->execute([
+            'user_id' => $userId,
+            'book_id' => $bookId,
+        ]);
+    }
+
     public function feedForUsers(array $userIds, int $viewerUserId, int $limit = 50, int $offset = 0): array
     {
         if ($userIds === []) {

@@ -93,6 +93,11 @@ CREATE TABLE IF NOT EXISTS reading_challenges (
     INDEX idx_challenges_user_period (user_id, starts_at, ends_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Limpiar actividad huerfana cuando el libro ya no esta en la biblioteca del usuario.
+DELETE ra FROM reading_activities ra
+LEFT JOIN user_books ub ON ub.user_id = ra.user_id AND ub.book_id = ra.book_id
+WHERE ub.id IS NULL;
+
 -- Verificacion rapida.
 SELECT 'Migracion NAS completada' AS status;
 SHOW TABLES LIKE 'friendships';
