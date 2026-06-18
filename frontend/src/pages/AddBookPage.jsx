@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PenLine } from 'lucide-react';
 import { addMyBook, createBook, searchBooks } from '../api.js';
 import { authorsLabel, coverSrc, libraryShelfPath } from '../navigation.js';
 import { Alert, Button, Card, PageHeader } from '../components/ui.jsx';
@@ -82,7 +83,16 @@ export default function AddBookPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <PageHeader title="Agregar libro" description="Busca por ISBN, título o autor. Combinamos Open Library y Google Books para mejores resultados y portadas." />
+      <PageHeader
+        title="Agregar libro"
+        description="Busca por ISBN, título o autor. Combinamos Open Library y Google Books para mejores resultados y portadas."
+        actions={(
+          <Button as={Link} to="/books/add/manual" variant="secondary">
+            <PenLine size={16} />
+            Agregar manualmente
+          </Button>
+        )}
+      />
 
       <Card className="p-5">
         <form onSubmit={handleSearch}>
