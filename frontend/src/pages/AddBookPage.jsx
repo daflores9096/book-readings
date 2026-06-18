@@ -82,7 +82,7 @@ export default function AddBookPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <PageHeader title="Agregar libro" description="Busca por ISBN, título o autor en Open Library y Google Books." />
+      <PageHeader title="Agregar libro" description="Busca por ISBN, título o autor. Combinamos Open Library y Google Books para mejores resultados y portadas." />
 
       <Card className="p-5">
         <form onSubmit={handleSearch}>
