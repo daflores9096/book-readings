@@ -11,7 +11,13 @@ import {
   coverSrc,
   progressPercent,
 } from '../navigation.js';
-import { Alert, Badge, Button, Card, EmptyState, PageHeader, Progress, Tabs } from '../components/ui.jsx';
+import { Alert, Button, Card, EmptyState, PageHeader, Progress, Tabs } from '../components/ui.jsx';
+
+const SHELF_BADGE_TONE = {
+  reading: 'brand',
+  want_to_read: 'orange',
+  read: 'green',
+};
 
 const PAGE_SIZE = 20;
 
@@ -253,12 +259,10 @@ export default function LibraryPage() {
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate font-semibold text-slate-800">{entry.title}</h2>
                       <p className="mt-1 text-sm text-slate-500">{authorsLabel(entry.authors)}</p>
-                      {activeTab === 'all' && entry.status && (
-                        <Badge tone="brand" className="mt-2">
-                          {STATUS_BADGE[entry.status] || entry.status}
-                        </Badge>
+                      {entry.status && (
+                        <ShelfStatusBadge status={entry.status} className="mt-2" />
                       )}
-                      <BookReadingStatus entry={entry} showLabel={activeTab !== 'all'} />
+                      <BookReadingStatus entry={entry} />
                       {entry.status === 'read' && (
                         <div className="mt-3">
                           <StarRating value={entry.rating || 0} disabled size={16} />
@@ -286,12 +290,33 @@ export default function LibraryPage() {
   );
 }
 
-function BookReadingStatus({ entry, showLabel = true }) {
+function ShelfStatusBadge({ status, className = '' }) {
+  const label = STATUS_BADGE[status];
+  if (!label) {
+    return null;
+  }
+
+  const tone = SHELF_BADGE_TONE[status] ?? 'gray';
+  const toneClass = {
+    brand: 'bg-brand-50 text-brand-700 ring-brand-200',
+    orange: 'bg-orange-50 text-orange-700 ring-orange-200',
+    green: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+    gray: 'bg-slate-100 text-slate-700 ring-slate-200',
+  }[tone];
+
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${toneClass} ${className}`}>
+      {label}
+    </span>
+  );
+}
+
+function BookReadingStatus({ entry }) {
   if (entry.status === 'reading') {
     if (entry.page_count) {
       const progress = progressPercent(entry);
       return (
-        <div className="mt-3">
+        <div className="mt-2">
           <div className="mb-1 flex justify-between text-xs text-slate-500">
             <span>Progreso</span>
             <span>{entry.current_page}/{entry.page_count}</span>
@@ -302,24 +327,21 @@ function BookReadingStatus({ entry, showLabel = true }) {
     }
 
     return (
-      <p className="mt-3 text-xs text-slate-400">Página {entry.current_page || 0}</p>
+      <p className="mt-2 text-xs text-slate-400">
+        Página {entry.current_page || 0}
+      </p>
     );
   }
 
-  if (!showLabel) {
-    return null;
+  if (entry.status === 'want_to_read') {
+    return (
+      <p className="mt-2 text-xs text-slate-500">
+        {entry.page_count ? `${entry.page_count} páginas` : 'Páginas no registradas'}
+      </p>
+    );
   }
 
-  const label = STATUS_BADGE[entry.status];
-  if (!label) {
-    return null;
-  }
-
-  const tone = entry.status === 'read' ? 'text-emerald-700' : 'text-slate-600';
-
-  return (
-    <p className={`mt-3 text-xs font-medium ${tone}`}>{label}</p>
-  );
+  return null;
 }
 
 function ChallengeBanner({ challenge }) {
