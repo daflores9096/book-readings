@@ -213,7 +213,7 @@ export default function BookDetailPage() {
             </div>
           )}
 
-          {entry.page_count ? (
+          {entry.status === 'reading' && entry.page_count ? (
             <div>
               <div className="mb-2 flex justify-between text-sm text-slate-600">
                 <span>Progreso de lectura</span>
@@ -221,6 +221,10 @@ export default function BookDetailPage() {
               </div>
               <Progress value={progress} className="h-3" />
             </div>
+          ) : entry.status === 'read' ? (
+            <p className="text-sm font-medium text-emerald-700">Leído</p>
+          ) : entry.status === 'want_to_read' ? (
+            <p className="text-sm font-medium text-slate-600">Quiero leer</p>
           ) : null}
 
           <div className="rounded-xl border border-slate-100 p-4">

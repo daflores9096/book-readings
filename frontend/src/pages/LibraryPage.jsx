@@ -236,7 +236,6 @@ export default function LibraryPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {visibleEntries.map((entry) => {
               const cover = coverSrc(entry);
-              const progress = progressPercent(entry);
               return (
                 <Link
                   key={entry.id}
@@ -259,17 +258,7 @@ export default function LibraryPage() {
                           {STATUS_BADGE[entry.status] || entry.status}
                         </Badge>
                       )}
-                      {entry.page_count ? (
-                        <div className="mt-3">
-                          <div className="mb-1 flex justify-between text-xs text-slate-500">
-                            <span>Progreso</span>
-                            <span>{entry.current_page}/{entry.page_count}</span>
-                          </div>
-                          <Progress value={progress} />
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-xs text-slate-400">Página {entry.current_page || 0}</p>
-                      )}
+                      <BookReadingStatus entry={entry} showLabel={activeTab !== 'all'} />
                       {entry.status === 'read' && (
                         <div className="mt-3">
                           <StarRating value={entry.rating || 0} disabled size={16} />
@@ -294,6 +283,42 @@ export default function LibraryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function BookReadingStatus({ entry, showLabel = true }) {
+  if (entry.status === 'reading') {
+    if (entry.page_count) {
+      const progress = progressPercent(entry);
+      return (
+        <div className="mt-3">
+          <div className="mb-1 flex justify-between text-xs text-slate-500">
+            <span>Progreso</span>
+            <span>{entry.current_page}/{entry.page_count}</span>
+          </div>
+          <Progress value={progress} />
+        </div>
+      );
+    }
+
+    return (
+      <p className="mt-3 text-xs text-slate-400">Página {entry.current_page || 0}</p>
+    );
+  }
+
+  if (!showLabel) {
+    return null;
+  }
+
+  const label = STATUS_BADGE[entry.status];
+  if (!label) {
+    return null;
+  }
+
+  const tone = entry.status === 'read' ? 'text-emerald-700' : 'text-slate-600';
+
+  return (
+    <p className={`mt-3 text-xs font-medium ${tone}`}>{label}</p>
   );
 }
 
