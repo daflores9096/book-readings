@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, Image } from 'lucide-react';
 
 const MAX_WIDTH = 720;
 const MAX_HEIGHT = 960;
@@ -63,10 +63,16 @@ function optimizeImage(file) {
 }
 
 export default function CoverCapture({ onChange, previewUrl }) {
-  const inputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
   const [localPreview, setLocalPreview] = useState(null);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  function handleInputChange(e) {
+    handleFile(e.target.files?.[0]);
+    e.target.value = '';
+  }
 
   async function handleFile(file) {
     if (!file) return;
@@ -98,21 +104,40 @@ export default function CoverCapture({ onChange, previewUrl }) {
         )}
       </div>
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => handleFile(e.target.files?.[0])}
+        onChange={handleInputChange}
       />
-      <button
-        type="button"
-        disabled={processing}
-        className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-        onClick={() => inputRef.current?.click()}
-      >
-        {processing ? 'Optimizando imagen...' : 'Usar cámara o galería'}
-      </button>
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleInputChange}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={processing}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          onClick={() => cameraInputRef.current?.click()}
+        >
+          <Camera size={16} />
+          {processing ? 'Procesando...' : 'Usar cámara'}
+        </button>
+        <button
+          type="button"
+          disabled={processing}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          onClick={() => galleryInputRef.current?.click()}
+        >
+          <Image size={16} />
+          {processing ? 'Procesando...' : 'Galería'}
+        </button>
+      </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
