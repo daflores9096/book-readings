@@ -5,6 +5,7 @@ const MAX_WIDTH = 720;
 const MAX_HEIGHT = 960;
 const MAX_FILE_SIZE = 180 * 1024;
 const MIN_QUALITY = 0.55;
+const PROCESS_TIMEOUT_MS = 25000;
 
 function canvasToBlob(canvas, quality) {
   return new Promise((resolve, reject) => {
@@ -26,40 +27,86 @@ function fileNameAsJpeg(name) {
   return name.includes('.') ? name.replace(/\.\w+$/, '.jpg') : `${name}.jpg`;
 }
 
-function optimizeImage(file) {
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
+}
+
+function loadImageElement(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = async () => {
-        try {
-          const scale = Math.min(1, MAX_WIDTH / img.width, MAX_HEIGHT / img.height);
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          let blob = null;
-          for (const quality of [0.78, 0.7, 0.62, MIN_QUALITY]) {
-            blob = await canvasToBlob(canvas, quality);
-            if (blob.size <= MAX_FILE_SIZE) {
-              break;
-            }
-          }
-
-          resolve(new File([blob], fileNameAsJpeg(file.name), { type: 'image/jpeg' }));
-        } catch (err) {
-          reject(err);
-        }
-      };
-      img.onerror = reject;
-      img.src = reader.result;
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('No se pudo cargar la imagen. Prueba con JPG o PNG.'));
+    };
+    img.src = objectUrl;
   });
+}
+
+async function loadImageSource(file) {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file, {
+        resizeWidth: MAX_WIDTH,
+        resizeHeight: MAX_HEIGHT,
+        resizeQuality: 'high',
+      });
+      const { width, height } = bitmap;
+      return {
+        draw: (ctx, w, h) => {
+          ctx.drawImage(bitmap, 0, 0, w, h);
+          bitmap.close();
+        },
+        width,
+        height,
+      };
+    } catch {
+      // Safari/iOS may reject some formats here; fall back to Image.
+    }
+  }
+
+  const img = await loadImageElement(file);
+  const scale = Math.min(1, MAX_WIDTH / img.width, MAX_HEIGHT / img.height);
+  const width = Math.round(img.width * scale);
+  const height = Math.round(img.height * scale);
+  return {
+    draw: (ctx, w, h) => ctx.drawImage(img, 0, 0, w, h),
+    width,
+    height,
+  };
+}
+
+async function optimizeImage(file) {
+  const { draw, width, height } = await loadImageSource(file);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('No se pudo procesar la imagen');
+  }
+  draw(ctx, width, height);
+
+  let blob = null;
+  for (const quality of [0.78, 0.7, 0.62, MIN_QUALITY]) {
+    blob = await canvasToBlob(canvas, quality);
+    if (blob.size <= MAX_FILE_SIZE) {
+      break;
+    }
+  }
+
+  return new File([blob], fileNameAsJpeg(file.name), { type: 'image/jpeg' });
 }
 
 export default function CoverCapture({ onChange, previewUrl }) {
@@ -69,17 +116,23 @@ export default function CoverCapture({ onChange, previewUrl }) {
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  function handleInputChange(e) {
-    handleFile(e.target.files?.[0]);
-    e.target.value = '';
+  async function handleInputChange(e) {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    await handleFile(file);
+    input.value = '';
   }
 
   async function handleFile(file) {
-    if (!file) return;
     setError('');
     setProcessing(true);
     try {
-      const optimized = await optimizeImage(file);
+      const optimized = await withTimeout(
+        optimizeImage(file),
+        PROCESS_TIMEOUT_MS,
+        'La imagen tardó demasiado. Prueba con otra foto más pequeña.',
+      );
       setLocalPreview(URL.createObjectURL(optimized));
       onChange?.(optimized);
     } catch (err) {
@@ -106,7 +159,7 @@ export default function CoverCapture({ onChange, previewUrl }) {
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/*"
         capture="environment"
         className="hidden"
         onChange={handleInputChange}
@@ -114,7 +167,7 @@ export default function CoverCapture({ onChange, previewUrl }) {
       <input
         ref={galleryInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/*"
         className="hidden"
         onChange={handleInputChange}
       />
