@@ -10,18 +10,103 @@ function getSpeechRecognition() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
+function getMicBlockMessage(reason) {
+  switch (reason) {
+    case 'insecure':
+      return 'El micrófono requiere HTTPS. Si entras por http:// (NAS o IP local), Chrome Android lo bloqueará. Configura HTTPS en Synology (Proxy inverso + certificado) o accede con https://.';
+    case 'denied':
+      return 'Permiso de micrófono denegado. En Chrome: toca el candado (o ⋮) → Configuración del sitio → Micrófono → Permitir. Luego recarga la página e intenta de nuevo.';
+    case 'unsupported':
+      return 'Este navegador no expone el micrófono. Usa Chrome en Android o escribe la nota a mano.';
+    default:
+      return 'No se pudo acceder al micrófono. Intenta de nuevo o escribe la nota.';
+  }
+}
+
+function buildDictatedText(results) {
+  const finals = [];
+  let interim = '';
+
+  for (let i = 0; i < results.length; i += 1) {
+    const text = results[i][0]?.transcript?.trim() ?? '';
+    if (!text) continue;
+
+    if (results[i].isFinal) {
+      finals.push(text);
+    } else {
+      interim = text;
+    }
+  }
+
+  if (finals.length === 0) {
+    return { dictated: '', interim };
+  }
+
+  if (finals.length === 1) {
+    return { dictated: finals[0], interim };
+  }
+
+  const areCumulative = finals.every((part, index) => {
+    if (index === 0) return true;
+    const previous = finals[index - 1].toLowerCase();
+    const current = part.toLowerCase();
+    return current.startsWith(previous) || current.includes(previous);
+  });
+
+  return {
+    dictated: areCumulative ? finals[finals.length - 1] : finals.join(' '),
+    interim,
+  };
+}
+
+function joinTextParts(...parts) {
+  return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+async function requestMicrophoneAccess() {
+  if (typeof window === 'undefined') {
+    return { ok: false, reason: 'unsupported' };
+  }
+
+  if (!window.isSecureContext) {
+    return { ok: false, reason: 'insecure' };
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return { ok: false, reason: 'unsupported' };
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((track) => track.stop());
+    return { ok: true };
+  } catch (err) {
+    if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+      return { ok: false, reason: 'denied' };
+    }
+    return { ok: false, reason: 'error', message: err?.message };
+  }
+}
+
 export default function AddNoteModal({ open, onClose, onSave, saving, defaultPage = '' }) {
   const [content, setContent] = useState('');
   const [pageNumber, setPageNumber] = useState(defaultPage);
   const [listening, setListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [needsHttps, setNeedsHttps] = useState(false);
   const [speechError, setSpeechError] = useState('');
-  const [interimText, setInterimText] = useState('');
+  const [requestingMic, setRequestingMic] = useState(false);
   const recognitionRef = useRef(null);
+  const dictationBaseRef = useRef('');
+  const contentRef = useRef('');
 
   useEffect(() => {
     setSpeechSupported(Boolean(getSpeechRecognition()));
   }, []);
+
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   useEffect(() => {
     if (!open) {
@@ -29,8 +114,11 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
       setContent('');
       setPageNumber(defaultPage);
       setSpeechError('');
-      setInterimText('');
+      setRequestingMic(false);
+      return;
     }
+
+    setNeedsHttps(typeof window !== 'undefined' && !window.isSecureContext);
   }, [open, defaultPage]);
 
   useEffect(() => () => stopListening(), []);
@@ -42,45 +130,30 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
       recognitionRef.current = null;
     }
     setListening(false);
-    setInterimText('');
   }
 
-  function startListening() {
+  function beginRecognition() {
     const SpeechRecognitionCtor = getSpeechRecognition();
     if (!SpeechRecognitionCtor) {
-      setSpeechError('Dictado no disponible en este navegador. Usa Chrome en Android o escribe la nota.');
+      setSpeechError(getMicBlockMessage('unsupported'));
       return;
     }
 
-    setSpeechError('');
+    dictationBaseRef.current = contentRef.current.trim();
+
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = 'es-ES';
     recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onresult = (event) => {
-      let finalChunk = '';
-      let interim = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const transcript = event.results[i][0].transcript.trim();
-        if (!transcript) continue;
-        if (event.results[i].isFinal) {
-          finalChunk += (finalChunk ? ' ' : '') + transcript;
-        } else {
-          interim += (interim ? ' ' : '') + transcript;
-        }
-      }
-
-      if (finalChunk) {
-        setContent((prev) => (prev ? `${prev} ${finalChunk}` : finalChunk));
-      }
-      setInterimText(interim);
+      const { dictated, interim } = buildDictatedText(event.results);
+      setContent(joinTextParts(dictationBaseRef.current, dictated, interim));
     };
 
     recognition.onerror = (event) => {
       if (event.error === 'not-allowed') {
-        setSpeechError('Permiso de micrófono denegado. Actívalo en la configuración del navegador.');
+        setSpeechError(getMicBlockMessage('denied'));
       } else if (event.error !== 'aborted') {
         setSpeechError('No se pudo capturar el audio. Intenta de nuevo o escribe la nota.');
       }
@@ -89,7 +162,6 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
 
     recognition.onend = () => {
       setListening(false);
-      setInterimText('');
       recognitionRef.current = null;
     };
 
@@ -98,12 +170,33 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
     setListening(true);
   }
 
-  function toggleListening() {
+  async function startListening() {
+    const SpeechRecognitionCtor = getSpeechRecognition();
+    if (!SpeechRecognitionCtor) {
+      setSpeechError(getMicBlockMessage('unsupported'));
+      return;
+    }
+
+    setSpeechError('');
+    setRequestingMic(true);
+
+    const access = await requestMicrophoneAccess();
+    setRequestingMic(false);
+
+    if (!access.ok) {
+      setSpeechError(getMicBlockMessage(access.reason));
+      return;
+    }
+
+    beginRecognition();
+  }
+
+  async function toggleListening() {
     if (listening) {
       stopListening();
       return;
     }
-    startListening();
+    await startListening();
   }
 
   async function handleSubmit(e) {
@@ -125,19 +218,29 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
     return null;
   }
 
+  const canDictate = speechSupported && !needsHttps;
+
   return (
     <Modal title="Agregar nota" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {needsHttps && (
+          <Alert tone="warning">
+            Estás en HTTP. Chrome Android no permite el micrófono sin HTTPS. Usa un enlace https:// o escribe la nota a mano.
+          </Alert>
+        )}
+
         <Field label="Frase o párrafo">
           <Textarea
             rows={6}
             value={content}
             placeholder={listening ? 'Escuchando… habla cerca del micrófono' : 'Dicta o escribe la cita que quieres guardar'}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              if (listening) {
+                dictationBaseRef.current = e.target.value.trim();
+              }
+            }}
           />
-          {interimText && (
-            <p className="mt-2 text-sm italic text-slate-500">{interimText}</p>
-          )}
         </Field>
 
         <Field label="Página (opcional)">
@@ -150,19 +253,22 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
           />
         </Field>
 
-        {speechSupported ? (
+        {canDictate ? (
           <Button
             type="button"
             variant={listening ? 'danger' : 'secondary'}
             className="w-full"
+            disabled={requestingMic}
             onClick={toggleListening}
           >
             {listening ? <MicOff size={16} /> : <Mic size={16} />}
-            {listening ? 'Detener dictado' : 'Dictar con micrófono'}
+            {requestingMic ? 'Solicitando micrófono…' : listening ? 'Detener dictado' : 'Dictar con micrófono'}
           </Button>
         ) : (
           <p className="text-xs text-slate-500">
-            El dictado por voz funciona en Chrome para Android. También puedes escribir la nota a mano.
+            {needsHttps
+              ? 'El dictado requiere HTTPS. También puedes escribir la nota a mano.'
+              : 'El dictado por voz funciona en Chrome para Android. También puedes escribir la nota a mano.'}
           </p>
         )}
 
