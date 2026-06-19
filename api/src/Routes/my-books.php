@@ -1,5 +1,6 @@
 <?php
 
+use App\Controllers\BookNoteController;
 use App\Controllers\UserBookController;
 use App\Utils\Response;
 
@@ -19,6 +20,19 @@ if ($path === '/api/my-books' && $method === 'GET') {
 
 if ($path === '/api/my-books' && $method === 'POST') {
     $controller->create();
+    exit;
+}
+
+if (preg_match('#^/api/my-books/(\d+)/notes$#', $path, $matches)) {
+    $id = (int)$matches[1];
+    $notesController = new BookNoteController();
+    if ($method === 'GET') {
+        $notesController->list($id);
+    } elseif ($method === 'POST') {
+        $notesController->create($id);
+    } else {
+        Response::error('Método no permitido', 405);
+    }
     exit;
 }
 

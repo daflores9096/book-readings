@@ -158,6 +158,14 @@ export function deleteMyBook(id) {
   return api(`/api/my-books/${id}`, { method: 'DELETE' });
 }
 
+export function getBookNotes(userBookId) {
+  return api(`/api/my-books/${userBookId}/notes`);
+}
+
+export function createBookNote(userBookId, payload) {
+  return api(`/api/my-books/${userBookId}/notes`, { method: 'POST', body: payload });
+}
+
 export function getActivityFeed(params) {
   return api('/api/activities/feed', { params });
 }

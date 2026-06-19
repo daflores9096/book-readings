@@ -83,3 +83,17 @@ export function formatActivityDate(value) {
     hour12: true,
   });
 }
+
+export function formatNoteDate(value) {
+  if (!value) return '';
+  const date = new Date(value.replace(' ', 'T'));
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('es', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}

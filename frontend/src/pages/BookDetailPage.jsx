@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, StickyNote, Trash2 } from 'lucide-react';
+import AddNoteModal from '../components/AddNoteModal.jsx';
+import BookNotesList from '../components/BookNotesList.jsx';
 import Modal from '../components/Modal.jsx';
 import CoverCapture from '../components/CoverCapture.jsx';
 import StarRating from '../components/StarRating.jsx';
-import { deleteMyBook, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
+import { createBookNote, deleteMyBook, getBookNotes, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
 import { authorsLabel, coverSrc, libraryShelfPath, progressPercent } from '../navigation.js';
 import { Alert, Button, Card, Field, Input, PageHeader, Progress, Select, Textarea } from '../components/ui.jsx';
 
@@ -27,6 +29,10 @@ export default function BookDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
+  const [notes, setNotes] = useState([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [noteSaving, setNoteSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -51,6 +57,29 @@ export default function BookDetailPage() {
   useEffect(() => {
     load();
   }, [userBookId]);
+
+  async function loadNotes(userBookEntry) {
+    if (!userBookEntry || !['reading', 'read'].includes(userBookEntry.status)) {
+      setNotes([]);
+      return;
+    }
+
+    setNotesLoading(true);
+    try {
+      const res = await getBookNotes(userBookEntry.id);
+      setNotes(res.data ?? []);
+    } catch {
+      setNotes([]);
+    } finally {
+      setNotesLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (entry) {
+      loadNotes(entry);
+    }
+  }, [entry?.id, entry?.status]);
 
   function openEditModal() {
     setError('');
@@ -151,6 +180,20 @@ export default function BookDetailPage() {
     }
   }
 
+  async function handleSaveNote(payload) {
+    setNoteSaving(true);
+    setError('');
+    try {
+      const res = await createBookNote(entry.id, payload);
+      setNotes((current) => [res.data, ...current]);
+      setNoteModalOpen(false);
+    } catch (err) {
+      setError(err.message || 'No se pudo guardar la nota');
+    } finally {
+      setNoteSaving(false);
+    }
+  }
+
   if (loading) {
     return <Card className="p-6 text-sm text-slate-600">Cargando...</Card>;
   }
@@ -166,6 +209,8 @@ export default function BookDetailPage() {
 
   const cover = coverSrc(entry);
   const progress = progressPercent(entry);
+  const showNotes = entry.status === 'reading' || entry.status === 'read';
+  const canAddNote = entry.status === 'reading';
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -175,6 +220,12 @@ export default function BookDetailPage() {
         description={authorsLabel(entry.authors)}
         actions={(
           <>
+            {canAddNote && (
+              <Button type="button" onClick={() => setNoteModalOpen(true)} size="sm">
+                <StickyNote size={16} />
+                Agregar Nota
+              </Button>
+            )}
             <Button type="button" onClick={openEditModal} variant="secondary" size="sm">
             <Pencil size={16} />
             Editar
@@ -274,6 +325,18 @@ export default function BookDetailPage() {
           )}
         </div>
       </Card>
+
+      {showNotes && (
+        <BookNotesList notes={notes} loading={notesLoading} />
+      )}
+
+      <AddNoteModal
+        open={noteModalOpen}
+        onClose={() => setNoteModalOpen(false)}
+        onSave={handleSaveNote}
+        saving={noteSaving}
+        defaultPage={entry.current_page ? String(entry.current_page) : ''}
+      />
 
       {editOpen && editForm && (
         <Modal title="Editar libro" onClose={() => setEditOpen(false)} wide>
