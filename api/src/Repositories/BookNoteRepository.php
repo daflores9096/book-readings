@@ -61,4 +61,19 @@ class BookNoteRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
+
+    public function deleteForUser(int $noteId, int $userId, int $userBookId): bool
+    {
+        $stmt = $this->db->prepare('
+            DELETE FROM book_notes
+            WHERE id = :id AND user_id = :user_id AND user_book_id = :user_book_id
+        ');
+        $stmt->execute([
+            'id' => $noteId,
+            'user_id' => $userId,
+            'user_book_id' => $userBookId,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

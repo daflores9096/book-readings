@@ -23,6 +23,18 @@ if ($path === '/api/my-books' && $method === 'POST') {
     exit;
 }
 
+if (preg_match('#^/api/my-books/(\d+)/notes/(\d+)$#', $path, $matches)) {
+    $userBookId = (int)$matches[1];
+    $noteId = (int)$matches[2];
+    $notesController = new BookNoteController();
+    if ($method === 'DELETE') {
+        $notesController->delete($userBookId, $noteId);
+    } else {
+        Response::error('Método no permitido', 405);
+    }
+    exit;
+}
+
 if (preg_match('#^/api/my-books/(\d+)/notes$#', $path, $matches)) {
     $id = (int)$matches[1];
     $notesController = new BookNoteController();

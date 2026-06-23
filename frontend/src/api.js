@@ -166,6 +166,10 @@ export function createBookNote(userBookId, payload) {
   return api(`/api/my-books/${userBookId}/notes`, { method: 'POST', body: payload });
 }
 
+export function deleteBookNote(userBookId, noteId) {
+  return api(`/api/my-books/${userBookId}/notes/${noteId}`, { method: 'DELETE' });
+}
+
 export function getActivityFeed(params) {
   return api('/api/activities/feed', { params });
 }

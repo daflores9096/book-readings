@@ -57,6 +57,18 @@ class BookNoteService
         return $note ?? [];
     }
 
+    public function delete(int $userId, int $userBookId, int $noteId): void
+    {
+        $entry = $this->requireOwnedEntry($userId, $userBookId);
+        if (!in_array($entry['status'], ['reading', 'read'], true)) {
+            Response::error('Las notas solo están disponibles para libros en lectura o leídos', 403);
+        }
+
+        if (!$this->noteRepository->deleteForUser($noteId, $userId, $userBookId)) {
+            Response::error('Nota no encontrada', 404);
+        }
+    }
+
     private function requireOwnedEntry(int $userId, int $userBookId): array
     {
         $entry = $this->userBookRepository->findByIdForUser($userBookId, $userId);

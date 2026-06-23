@@ -6,7 +6,7 @@ import BookNotesList from '../components/BookNotesList.jsx';
 import Modal from '../components/Modal.jsx';
 import CoverCapture from '../components/CoverCapture.jsx';
 import StarRating from '../components/StarRating.jsx';
-import { createBookNote, deleteMyBook, getBookNotes, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
+import { createBookNote, deleteBookNote, deleteMyBook, getBookNotes, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
 import { authorsLabel, coverSrc, libraryShelfPath, progressPercent } from '../navigation.js';
 import { Alert, Button, Card, Field, Input, PageHeader, Progress, Select, Textarea } from '../components/ui.jsx';
 
@@ -33,6 +33,7 @@ export default function BookDetailPage() {
   const [notesLoading, setNotesLoading] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [noteSaving, setNoteSaving] = useState(false);
+  const [deletingNoteId, setDeletingNoteId] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -194,6 +195,20 @@ export default function BookDetailPage() {
     }
   }
 
+  async function handleDeleteNote(note) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    setDeletingNoteId(note.id);
+    setError('');
+    try {
+      await deleteBookNote(entry.id, note.id);
+      setNotes((current) => current.filter((item) => item.id !== note.id));
+    } catch (err) {
+      setError(err.message || 'No se pudo eliminar la nota');
+    } finally {
+      setDeletingNoteId(null);
+    }
+  }
+
   if (loading) {
     return <Card className="p-6 text-sm text-slate-600">Cargando...</Card>;
   }
@@ -327,7 +342,12 @@ export default function BookDetailPage() {
       </Card>
 
       {showNotes && (
-        <BookNotesList notes={notes} loading={notesLoading} />
+        <BookNotesList
+          notes={notes}
+          loading={notesLoading}
+          onDelete={handleDeleteNote}
+          deletingNoteId={deletingNoteId}
+        />
       )}
 
       <AddNoteModal

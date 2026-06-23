@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PenLine } from 'lucide-react';
+import { PenLine, ScanBarcode } from 'lucide-react';
+import IsbnScannerModal from '../components/IsbnScannerModal.jsx';
 import { addMyBook, createBook, searchBooks } from '../api.js';
 import { authorsLabel, coverSrc, libraryShelfPath } from '../navigation.js';
 import { Alert, Button, Card, PageHeader } from '../components/ui.jsx';
@@ -15,24 +16,27 @@ export default function AddBookPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
-  async function handleSearch(e) {
-    e.preventDefault();
+  async function runSearch(searchQuery, type = searchType) {
     setError('');
     setNotFound(false);
     setResults([]);
     setSelected(null);
-    const trimmedQuery = query.trim();
+    const trimmedQuery = searchQuery.trim();
     if (!trimmedQuery) {
       setError('Ingresa un texto de búsqueda');
       return;
     }
     setLoading(true);
     try {
-      const res = await searchBooks(searchType, trimmedQuery);
+      const res = await searchBooks(type, trimmedQuery);
       const foundResults = res.data.results ?? [];
       setResults(foundResults);
       setSelected(foundResults[0] ?? null);
+      if (foundResults.length === 0) {
+        setNotFound(true);
+      }
     } catch (err) {
       if (err.status === 404 && err.data?.data?.found === false) {
         setNotFound(true);
@@ -42,6 +46,17 @@ export default function AddBookPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    await runSearch(query);
+  }
+
+  function handleIsbnScanned(isbn) {
+    setSearchType('isbn');
+    setQuery(isbn);
+    runSearch(isbn, 'isbn');
   }
 
   async function handleAdd() {
@@ -117,12 +132,26 @@ export default function AddBookPage() {
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium">{labels[searchType]}</label>
-            <input
-              className="w-full rounded-xl border border-slate-300 px-3 py-2.5"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={placeholders[searchType]}
-            />
+            <div className="flex gap-2">
+              <input
+                className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2.5"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={placeholders[searchType]}
+              />
+              {searchType === 'isbn' && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="shrink-0 px-3"
+                  onClick={() => setScannerOpen(true)}
+                  aria-label="Escanear ISBN"
+                >
+                  <ScanBarcode size={18} />
+                  <span className="hidden sm:inline">Escanear</span>
+                </Button>
+              )}
+            </div>
           </div>
           <input
             type="submit"
@@ -213,6 +242,12 @@ export default function AddBookPage() {
           )}
         </div>
       )}
+
+      <IsbnScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleIsbnScanned}
+      />
     </div>
   );
 }

@@ -34,4 +34,11 @@ class BookNoteController
             'data' => $note,
         ], 201);
     }
+
+    public function delete(int $userBookId, int $noteId): void
+    {
+        $user = AuthMiddleware::verifyToken();
+        $this->service->delete((int)$user->sub, $userBookId, $noteId);
+        Response::noContent(204);
+    }
 }
