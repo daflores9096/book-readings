@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CoverCapture from '../components/CoverCapture.jsx';
-import DescriptionOcrField from '../components/DescriptionOcrField.jsx';
+import DescriptionDictationField from '../components/DescriptionDictationField.jsx';
 import { addMyBook, createBook, uploadBookCover } from '../api.js';
 import { libraryShelfPath } from '../navigation.js';
 import { Alert, Button, Card, Field as UiField, Input, PageHeader, Select } from '../components/ui.jsx';
@@ -79,7 +79,7 @@ export default function ManualBookPage() {
           <Field label="Páginas" type="number" value={form.page_count} onChange={(v) => setForm((f) => ({ ...f, page_count: v }))} />
           <Field label="Editorial" value={form.publisher} onChange={(v) => setForm((f) => ({ ...f, publisher: v }))} />
           <Field label="Fecha publicación" value={form.published_date} onChange={(v) => setForm((f) => ({ ...f, published_date: v }))} />
-          <DescriptionOcrField
+          <DescriptionDictationField
             value={form.description}
             onChange={(description) => setForm((f) => ({ ...f, description }))}
           />

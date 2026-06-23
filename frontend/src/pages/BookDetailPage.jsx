@@ -5,7 +5,7 @@ import AddNoteModal from '../components/AddNoteModal.jsx';
 import BookNotesList from '../components/BookNotesList.jsx';
 import Modal from '../components/Modal.jsx';
 import CoverCapture from '../components/CoverCapture.jsx';
-import DescriptionOcrField from '../components/DescriptionOcrField.jsx';
+import DescriptionDictationField from '../components/DescriptionDictationField.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { createBookNote, deleteBookNote, deleteMyBook, getBookNotes, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
 import { authorsLabel, coverSrc, libraryShelfPath, progressPercent } from '../navigation.js';
@@ -373,7 +373,7 @@ export default function BookDetailPage() {
                 <EditField label="Fecha publicación" value={editForm.published_date} onChange={(value) => setEditForm((form) => ({ ...form, published_date: value }))} />
               </div>
               <EditField label="URL de portada externa" value={editForm.cover_url} onChange={(value) => setEditForm((form) => ({ ...form, cover_url: value }))} />
-              <DescriptionOcrField
+              <DescriptionDictationField
                 value={editForm.description}
                 onChange={(description) => setEditForm((form) => ({ ...form, description }))}
               />
