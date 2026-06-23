@@ -5,10 +5,11 @@ import AddNoteModal from '../components/AddNoteModal.jsx';
 import BookNotesList from '../components/BookNotesList.jsx';
 import Modal from '../components/Modal.jsx';
 import CoverCapture from '../components/CoverCapture.jsx';
+import DescriptionOcrField from '../components/DescriptionOcrField.jsx';
 import StarRating from '../components/StarRating.jsx';
 import { createBookNote, deleteBookNote, deleteMyBook, getBookNotes, getMyBooks, updateBook, updateMyBook, uploadBookCover } from '../api.js';
 import { authorsLabel, coverSrc, libraryShelfPath, progressPercent } from '../navigation.js';
-import { Alert, Button, Card, Field, Input, PageHeader, Progress, Select, Textarea } from '../components/ui.jsx';
+import { Alert, Button, Card, Field, Input, PageHeader, Progress, Select } from '../components/ui.jsx';
 
 const STATUS_LABELS = {
   want_to_read: 'Quiero leer',
@@ -372,12 +373,10 @@ export default function BookDetailPage() {
                 <EditField label="Fecha publicación" value={editForm.published_date} onChange={(value) => setEditForm((form) => ({ ...form, published_date: value }))} />
               </div>
               <EditField label="URL de portada externa" value={editForm.cover_url} onChange={(value) => setEditForm((form) => ({ ...form, cover_url: value }))} />
-              <Field label="Descripción">
-                <Textarea
-                  value={editForm.description}
-                  onChange={(e) => setEditForm((form) => ({ ...form, description: e.target.value }))}
-                />
-              </Field>
+              <DescriptionOcrField
+                value={editForm.description}
+                onChange={(description) => setEditForm((form) => ({ ...form, description }))}
+              />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Estante">
                   <Select
