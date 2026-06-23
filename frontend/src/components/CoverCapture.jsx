@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Camera, Image } from 'lucide-react';
+import { Camera, Image as ImageIcon } from 'lucide-react';
 
 const MAX_WIDTH = 720;
 const MAX_HEIGHT = 960;
@@ -39,7 +39,7 @@ function withTimeout(promise, ms, message) {
 function loadImageElement(file) {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
+    const img = document.createElement('img');
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
       resolve(img);
@@ -187,7 +187,7 @@ export default function CoverCapture({ onChange, previewUrl }) {
           className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           onClick={() => galleryInputRef.current?.click()}
         >
-          <Image size={16} />
+          <ImageIcon size={16} />
           {processing ? 'Procesando...' : 'Galería'}
         </button>
       </div>

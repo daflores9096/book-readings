@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Camera, Image, ScanText } from 'lucide-react';
+import { Camera, Image as ImageIcon, ScanText } from 'lucide-react';
 import Modal from './Modal.jsx';
 import { Alert, Button, Field, Textarea } from './ui.jsx';
 
@@ -35,7 +35,7 @@ async function prepareImageForOcr(file) {
   const objectUrl = URL.createObjectURL(file);
   try {
     const img = await new Promise((resolve, reject) => {
-      const image = new Image();
+      const image = document.createElement('img');
       image.onload = () => resolve(image);
       image.onerror = reject;
       image.src = objectUrl;
@@ -208,7 +208,7 @@ function DescriptionOcrModal({ open, onClose, onApply, currentValue }) {
             disabled={processing}
             onClick={() => galleryInputRef.current?.click()}
           >
-            <Image size={16} />
+            <ImageIcon size={16} />
             Galería
           </Button>
         </div>
