@@ -1,134 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import Modal from './Modal.jsx';
 import { Alert, Button, Field, Input, Textarea } from './ui.jsx';
-import {
-  buildDictatedText,
-  getMicBlockMessage,
-  getSpeechRecognition,
-  joinTextParts,
-  requestMicrophoneAccess,
-} from '../utils/speechDictation.js';
+import { useSpeechDictation } from '../utils/useSpeechDictation.js';
 
 export default function AddNoteModal({ open, onClose, onSave, saving, defaultPage = '' }) {
   const [content, setContent] = useState('');
   const [pageNumber, setPageNumber] = useState(defaultPage);
-  const [listening, setListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
-  const [needsHttps, setNeedsHttps] = useState(false);
-  const [speechError, setSpeechError] = useState('');
-  const [requestingMic, setRequestingMic] = useState(false);
-  const recognitionRef = useRef(null);
-  const dictationBaseRef = useRef('');
-  const contentRef = useRef('');
+  const [submitError, setSubmitError] = useState('');
 
-  useEffect(() => {
-    setSpeechSupported(Boolean(getSpeechRecognition()));
-  }, []);
-
-  useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
+  const {
+    listening,
+    requestingMic,
+    speechError,
+    canDictate,
+    needsHttps,
+    toggleListening,
+    stopListening,
+    handleManualTextChange,
+  } = useSpeechDictation({
+    text: content,
+    onTextChange: setContent,
+    active: open,
+  });
 
   useEffect(() => {
     if (!open) {
-      stopListening();
       setContent('');
       setPageNumber(defaultPage);
-      setSpeechError('');
-      setRequestingMic(false);
-      return;
+      setSubmitError('');
     }
-
-    setNeedsHttps(typeof window !== 'undefined' && !window.isSecureContext);
   }, [open, defaultPage]);
-
-  useEffect(() => () => stopListening(), []);
-
-  function stopListening() {
-    if (recognitionRef.current) {
-      recognitionRef.current.onend = null;
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-    setListening(false);
-  }
-
-  function beginRecognition() {
-    const SpeechRecognitionCtor = getSpeechRecognition();
-    if (!SpeechRecognitionCtor) {
-      setSpeechError(getMicBlockMessage('unsupported'));
-      return;
-    }
-
-    dictationBaseRef.current = contentRef.current.trim();
-
-    const recognition = new SpeechRecognitionCtor();
-    recognition.lang = 'es-ES';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onresult = (event) => {
-      const { dictated, interim } = buildDictatedText(event.results);
-      setContent(joinTextParts(dictationBaseRef.current, dictated, interim));
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === 'not-allowed') {
-        setSpeechError(getMicBlockMessage('denied'));
-      } else if (event.error !== 'aborted') {
-        setSpeechError('No se pudo capturar el audio. Intenta de nuevo o escribe la nota.');
-      }
-      stopListening();
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-      recognitionRef.current = null;
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
-  }
-
-  async function startListening() {
-    const SpeechRecognitionCtor = getSpeechRecognition();
-    if (!SpeechRecognitionCtor) {
-      setSpeechError(getMicBlockMessage('unsupported'));
-      return;
-    }
-
-    setSpeechError('');
-    setRequestingMic(true);
-
-    const access = await requestMicrophoneAccess();
-    setRequestingMic(false);
-
-    if (!access.ok) {
-      setSpeechError(getMicBlockMessage(access.reason));
-      return;
-    }
-
-    beginRecognition();
-  }
-
-  async function toggleListening() {
-    if (listening) {
-      stopListening();
-      return;
-    }
-    await startListening();
-  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     const trimmed = content.trim();
     if (!trimmed) {
-      setSpeechError('Escribe o dicta algo antes de guardar.');
+      setSubmitError('Escribe o dicta algo antes de guardar.');
       return;
     }
 
+    setSubmitError('');
     stopListening();
     await onSave({
       content: trimmed,
@@ -139,8 +51,6 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
   if (!open) {
     return null;
   }
-
-  const canDictate = speechSupported && !needsHttps;
 
   return (
     <Modal title="Agregar nota" onClose={onClose}>
@@ -156,12 +66,7 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
             rows={6}
             value={content}
             placeholder={listening ? 'Escuchando… habla cerca del micrófono' : 'Dicta o escribe la cita que quieres guardar'}
-            onChange={(e) => {
-              setContent(e.target.value);
-              if (listening) {
-                dictationBaseRef.current = e.target.value.trim();
-              }
-            }}
+            onChange={(e) => handleManualTextChange(e.target.value)}
           />
         </Field>
 
@@ -195,6 +100,7 @@ export default function AddNoteModal({ open, onClose, onSave, saving, defaultPag
         )}
 
         {speechError && <Alert tone="error">{speechError}</Alert>}
+        {submitError && <Alert tone="error">{submitError}</Alert>}
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

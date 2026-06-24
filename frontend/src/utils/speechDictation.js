@@ -18,44 +18,44 @@ export function getMicBlockMessage(reason) {
   }
 }
 
-export function buildDictatedText(results) {
-  const finals = [];
-  let interim = '';
+export function joinTextParts(...parts) {
+  return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
 
-  for (let i = 0; i < results.length; i += 1) {
+export function mergeSessionFinal(existing, incoming) {
+  const next = incoming?.trim() ?? '';
+  if (!next) return existing?.trim() ?? '';
+
+  const prev = existing?.trim() ?? '';
+  if (!prev) return next;
+
+  const prevLower = prev.toLowerCase();
+  const nextLower = next.toLowerCase();
+  if (nextLower.startsWith(prevLower) || nextLower.includes(prevLower)) {
+    return next;
+  }
+
+  return joinTextParts(prev, next);
+}
+
+export function processRecognitionEvent(results, resultIndex = 0) {
+  let interim = '';
+  let sessionUpdate = null;
+
+  for (let i = resultIndex; i < results.length; i += 1) {
     const text = results[i][0]?.transcript?.trim() ?? '';
     if (!text) continue;
 
     if (results[i].isFinal) {
-      finals.push(text);
+      sessionUpdate = sessionUpdate === null
+        ? text
+        : mergeSessionFinal(sessionUpdate, text);
     } else {
       interim = text;
     }
   }
 
-  if (finals.length === 0) {
-    return { dictated: '', interim };
-  }
-
-  if (finals.length === 1) {
-    return { dictated: finals[0], interim };
-  }
-
-  const areCumulative = finals.every((part, index) => {
-    if (index === 0) return true;
-    const previous = finals[index - 1].toLowerCase();
-    const current = part.toLowerCase();
-    return current.startsWith(previous) || current.includes(previous);
-  });
-
-  return {
-    dictated: areCumulative ? finals[finals.length - 1] : finals.join(' '),
-    interim,
-  };
-}
-
-export function joinTextParts(...parts) {
-  return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  return { sessionUpdate, interim };
 }
 
 export async function requestMicrophoneAccess() {
