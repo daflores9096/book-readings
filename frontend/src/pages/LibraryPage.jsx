@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, BookOpen, Flame, Trophy } from 'lucide-react';
+import { ArrowUpDown, BookOpen, Flame, Search, Trophy, X } from 'lucide-react';
 import StarRating from '../components/StarRating.jsx';
 import { getActiveChallenge, getMyBooks } from '../api.js';
 import {
@@ -11,7 +11,7 @@ import {
   coverSrc,
   progressPercent,
 } from '../navigation.js';
-import { Alert, Button, Card, EmptyState, PageHeader, Progress, Tabs } from '../components/ui.jsx';
+import { Alert, Button, Card, EmptyState, Input, PageHeader, Progress, Tabs } from '../components/ui.jsx';
 
 const SHELF_BADGE_TONE = {
   reading: 'brand',
@@ -96,6 +96,26 @@ function countByShelf(entries) {
   return counts;
 }
 
+function entrySearchText(entry) {
+  const parts = [
+    entry.title,
+    ...(entry.authors ?? []),
+    entry.isbn,
+    entry.publisher,
+    entry.description,
+  ];
+  return normalizeText(parts.filter(Boolean).join(' '));
+}
+
+function matchesSearch(entry, query) {
+  const normalizedQuery = normalizeText(query);
+  if (!normalizedQuery) return true;
+
+  const haystack = entrySearchText(entry);
+  const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  return tokens.every((token) => haystack.includes(token));
+}
+
 export default function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedShelf = searchParams.get('status');
@@ -105,6 +125,7 @@ export default function LibraryPage() {
   const [sortBy, setSortBy] = useState(initialSort);
   const [sortDirection, setSortDirection] = useState(defaultDirectionForSort(initialSort));
   const [allEntries, setAllEntries] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,8 +145,16 @@ export default function LibraryPage() {
     return allEntries.filter((entry) => entry.status === activeTab);
   }, [allEntries, activeTab]);
 
+  const filteredEntries = useMemo(
+    () => entries.filter((entry) => matchesSearch(entry, searchQuery)),
+    [entries, searchQuery],
+  );
+
   const sortOptions = activeTab === 'read' ? SORT_OPTIONS.read : SORT_OPTIONS.default;
-  const sortedEntries = useMemo(() => sortEntries(entries, sortBy, sortDirection), [entries, sortBy, sortDirection]);
+  const sortedEntries = useMemo(
+    () => sortEntries(filteredEntries, sortBy, sortDirection),
+    [filteredEntries, sortBy, sortDirection],
+  );
   const visibleEntries = useMemo(() => sortedEntries.slice(0, visibleCount), [sortedEntries, visibleCount]);
   const hasMore = visibleCount < sortedEntries.length;
 
@@ -158,6 +187,10 @@ export default function LibraryPage() {
   }, [sortBy, sortDirection]);
 
   useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery]);
+
+  useEffect(() => {
     const shelf = searchParams.get('status');
     if (LIBRARY_TAB_IDS.includes(shelf) && shelf !== activeTab) {
       setActiveTab(shelf);
@@ -181,6 +214,7 @@ export default function LibraryPage() {
   const emptyTitle = activeTab === 'all'
     ? 'No tienes libros en tu biblioteca.'
     : 'No tienes libros en esta estantería.';
+  const isSearching = normalizeText(searchQuery).length > 0;
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
@@ -205,12 +239,35 @@ export default function LibraryPage() {
 
       {loading ? (
         <Card className="p-6 text-sm text-slate-600">Cargando...</Card>
+      ) : allEntries.length === 0 ? (
+        <EmptyState icon={BookOpen} title={emptyTitle} description="Agrega un libro o cambia de estante para ver tus lecturas." />
       ) : entries.length === 0 ? (
         <EmptyState icon={BookOpen} title={emptyTitle} description="Agrega un libro o cambia de estante para ver tus lecturas." />
       ) : (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm sm:w-auto">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Input
+                className="pl-10 pr-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por título, autor, ISBN o editorial…"
+                aria-label="Buscar libros"
+              />
+              {isSearching && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm lg:w-auto">
               <span className="shrink-0 text-sm font-medium text-slate-600">Ordenar por</span>
               <select
                 className="min-w-0 flex-1 appearance-none bg-transparent text-sm font-semibold text-brand-700 outline-none sm:w-40"
@@ -239,6 +296,22 @@ export default function LibraryPage() {
             </div>
           </div>
 
+          {isSearching && (
+            <p className="text-sm text-slate-500">
+              {filteredEntries.length === 0
+                ? 'Ningún libro coincide con tu búsqueda.'
+                : `${filteredEntries.length} libro${filteredEntries.length === 1 ? '' : 's'} encontrado${filteredEntries.length === 1 ? '' : 's'}.`}
+            </p>
+          )}
+
+          {filteredEntries.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="Sin resultados"
+              description="Prueba con otro título, autor o ISBN, o limpia la búsqueda para ver todos los libros de esta estantería."
+            />
+          ) : (
+            <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {visibleEntries.map((entry) => {
               const cover = coverSrc(entry);
@@ -284,6 +357,8 @@ export default function LibraryPage() {
               <p className="text-sm text-slate-500">No hay más libros</p>
             ) : null}
           </div>
+            </>
+          )}
         </div>
       )}
     </div>
