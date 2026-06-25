@@ -41,8 +41,7 @@ class ActivityService
 
     public function recordFromUpdate(int $userId, array $before, array $after): void
     {
-        $userBookId = (int)$before['id'];
-        $bookId = (int)$before['book_id'];
+        $statusChangedToRead = $before['status'] !== $after['status'] && $after['status'] === 'read';
 
         if ($before['status'] !== $after['status']) {
             if ($after['status'] === 'reading') {
@@ -63,6 +62,7 @@ class ActivityService
             (int)($before['rating'] ?? 0) !== (int)($after['rating'] ?? 0)
             && (int)($after['rating'] ?? 0) > 0
             && $after['status'] === 'read'
+            && !$statusChangedToRead
         ) {
             $this->record($userId, $after, 'rating_updated');
         }
