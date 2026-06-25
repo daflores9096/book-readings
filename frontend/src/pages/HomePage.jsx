@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookMarked, BookOpen, Library, Ruler } from 'lucide-react';
+import { BookOpen, Ruler } from 'lucide-react';
 import StarRating from '../components/StarRating.jsx';
 import { addMyBook, getActivityFeed, getMyBooks } from '../api.js';
 import {
@@ -43,9 +43,6 @@ function computeReadingStats(books) {
   }
 
   return {
-    year,
-    readThisYear: readThisYear.length,
-    totalRead: books.length,
     longestThisYear,
     shortestThisYear,
   };
@@ -201,7 +198,7 @@ function ReadingStatsCards({ stats, loading }) {
   if (loading) {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, index) => (
+        {Array.from({ length: 2 }).map((_, index) => (
           <div key={index} className="h-32 animate-pulse rounded-2xl bg-slate-200/70" />
         ))}
       </div>
@@ -227,18 +224,6 @@ function ReadingStatsCards({ stats, loading }) {
         suffix={stats.shortestThisYear ? 'págs.' : null}
         bookId={stats.shortestThisYear?.id}
         book={stats.shortestThisYear}
-      />
-      <StatCard
-        icon={BookMarked}
-        label={`Leídos en ${stats.year}`}
-        value={String(stats.readThisYear)}
-        hint="Libros terminados este año"
-      />
-      <StatCard
-        icon={Library}
-        label="Total leídos"
-        value={String(stats.totalRead)}
-        hint="Tu historial completo de lectura"
       />
     </div>
   );
