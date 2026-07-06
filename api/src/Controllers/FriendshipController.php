@@ -2,16 +2,19 @@
 namespace App\Controllers;
 
 use App\Services\FriendshipService;
+use App\Services\UserProfileService;
 use App\Utils\AuthMiddleware;
 use App\Utils\Response;
 
 class FriendshipController
 {
     private FriendshipService $service;
+    private UserProfileService $profileService;
 
     public function __construct()
     {
         $this->service = new FriendshipService();
+        $this->profileService = new UserProfileService();
     }
 
     public function list(): void
@@ -69,5 +72,14 @@ class FriendshipController
         $user = AuthMiddleware::verifyToken();
         $this->service->removeFriendship((int)$user->sub, $id);
         Response::noContent(204);
+    }
+
+    public function profile(int $userId): void
+    {
+        $user = AuthMiddleware::verifyToken();
+        Response::json([
+            'status' => 'success',
+            'data' => $this->profileService->profileForViewer((int)$user->sub, $userId),
+        ]);
     }
 }

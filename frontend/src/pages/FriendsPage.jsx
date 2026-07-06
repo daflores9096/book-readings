@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Check, Search, UserMinus, UserPlus, X } from 'lucide-react';
 import {
   getFriends,
@@ -8,9 +9,11 @@ import {
   sendFriendRequest,
 } from '../api.js';
 import { displayName } from '../navigation.js';
+import { useAuth } from '../auth.jsx';
 import { Alert, Button, Card, Input, PageHeader } from '../components/ui.jsx';
 
 export default function FriendsPage() {
+  const { user } = useAuth();
   const [overview, setOverview] = useState({ friends: [], pending_received: [], pending_sent: [] });
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -99,7 +102,15 @@ export default function FriendsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <PageHeader title="Mis amigos" description="Busca lectores y comparte tu actividad de lectura." />
+      <PageHeader
+        title="Mis amigos"
+        description="Busca lectores y comparte tu actividad de lectura."
+        actions={user?.id ? (
+          <Button as={Link} to={`/friends/${user.id}`} variant="secondary" size="sm">
+            Ver mi perfil
+          </Button>
+        ) : null}
+      />
 
       {error && <Alert tone="error">{error}</Alert>}
       {message && <Alert tone="success">{message}</Alert>}
@@ -192,11 +203,18 @@ function Section({ title, empty, children }) {
 
 function UserRow({ user, onSend, onAccept, onReject, onRemove }) {
   const name = displayName(user);
+  const profilePath = user.relation === 'friend' ? `/friends/${user.id}` : null;
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2">
       <div className="min-w-0">
-        <div className="font-medium text-slate-800">{name}</div>
+        {profilePath ? (
+          <Link to={profilePath} className="block font-medium text-slate-800 transition hover:text-indigo-700">
+            {name}
+          </Link>
+        ) : (
+          <div className="font-medium text-slate-800">{name}</div>
+        )}
         <div className="text-sm text-slate-500">@{user.username}</div>
       </div>
       <div className="flex shrink-0 gap-1">

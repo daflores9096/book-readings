@@ -32,6 +32,16 @@ class FriendshipRepository
         return $row ?: null;
     }
 
+    public function areAcceptedFriends(int $userA, int $userB): bool
+    {
+        if ($userA === $userB) {
+            return true;
+        }
+
+        $row = $this->findBetween($userA, $userB);
+        return $row !== null && $row['status'] === 'accepted';
+    }
+
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM friendships WHERE id = :id LIMIT 1');

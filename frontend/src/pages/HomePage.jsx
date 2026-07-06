@@ -290,7 +290,12 @@ function ActivityCard({ item, currentUserId, isAdding, onAddWantToRead }) {
               <span className="font-semibold text-slate-900">Tú {actionLabel}</span>
             ) : (
               <>
-                <span className="font-semibold text-slate-900">{actorName}</span>
+                <Link
+                  to={`/friends/${item.user_id}`}
+                  className="font-semibold text-slate-900 transition hover:text-indigo-700"
+                >
+                  {actorName}
+                </Link>
                 {' '}
                 {actionLabel}
               </>

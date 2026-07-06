@@ -194,6 +194,10 @@ export function removeFriend(friendshipId) {
   return api(`/api/friends/${friendshipId}`, { method: 'DELETE' });
 }
 
+export function getFriendProfile(userId) {
+  return api(`/api/friends/users/${userId}/profile`);
+}
+
 export function getChallenges() {
   return api('/api/challenges');
 }

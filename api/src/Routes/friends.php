@@ -32,6 +32,11 @@ if (preg_match('#^/api/friends/requests/(\d+)$#', $path, $matches) && $method ==
     exit;
 }
 
+if (preg_match('#^/api/friends/users/(\d+)/profile$#', $path, $matches) && $method === 'GET') {
+    $controller->profile((int)$matches[1]);
+    exit;
+}
+
 if (preg_match('#^/api/friends/(\d+)$#', $path, $matches) && $method === 'DELETE') {
     $controller->delete((int)$matches[1]);
     exit;

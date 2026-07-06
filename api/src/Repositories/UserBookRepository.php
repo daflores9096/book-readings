@@ -48,6 +48,71 @@ class UserBookRepository
         return array_map(fn ($row) => $this->hydrateRow($row), $rows);
     }
 
+    public function listRecentReadBooks(int $userId, int $limit = 5): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT
+                ub.*,
+                b.title,
+                b.authors,
+                b.page_count,
+                b.cover_url,
+                b.cover_path,
+                b.isbn13,
+                b.isbn10,
+                b.publisher,
+                b.published_date,
+                b.description
+            FROM user_books ub
+            JOIN books b ON b.id = ub.book_id
+            WHERE ub.user_id = :user_id
+              AND ub.status = :status
+              AND ub.finished_at IS NOT NULL
+            ORDER BY ub.finished_at DESC, ub.id DESC
+            LIMIT :limit
+        ');
+        $stmt->bindValue('user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue('status', 'read', PDO::PARAM_STR);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(fn ($row) => $this->hydrateRow($row), $rows);
+    }
+
+    public function listReadFinishedBetween(int $userId, string $startsAt, string $endsAt): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT
+                ub.*,
+                b.title,
+                b.authors,
+                b.page_count,
+                b.cover_url,
+                b.cover_path,
+                b.isbn13,
+                b.isbn10,
+                b.publisher,
+                b.published_date,
+                b.description
+            FROM user_books ub
+            JOIN books b ON b.id = ub.book_id
+            WHERE ub.user_id = :user_id
+              AND ub.status = :status
+              AND ub.finished_at BETWEEN :starts_at AND :ends_at
+            ORDER BY ub.finished_at DESC, ub.id DESC
+        ');
+        $stmt->execute([
+            'user_id' => $userId,
+            'status' => 'read',
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+        ]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(fn ($row) => $this->hydrateRow($row), $rows);
+    }
+
     public function findByIdForUser(int $id, int $userId): ?array
     {
         $stmt = $this->db->prepare('

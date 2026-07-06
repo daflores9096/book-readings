@@ -4,6 +4,7 @@ import { HomeRedirect, RequireAuth, RequireRole } from './auth.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import FriendsPage from './pages/FriendsPage.jsx';
+import FriendProfilePage from './pages/FriendProfilePage.jsx';
 import ChallengesPage from './pages/ChallengesPage.jsx';
 import ChallengeDetailPage from './pages/ChallengeDetailPage.jsx';
 import LibraryPage from './pages/LibraryPage.jsx';
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
       { path: 'home', element: <HomePage /> },
       { path: 'library', element: <LibraryPage /> },
       { path: 'friends', element: <FriendsPage /> },
+      { path: 'friends/:userId', element: <FriendProfilePage /> },
       { path: 'challenges', element: <ChallengesPage /> },
       { path: 'challenges/:challengeId', element: <ChallengeDetailPage /> },
       { path: 'books/add', element: <AddBookPage /> },
