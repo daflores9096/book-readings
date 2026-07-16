@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Search, UserMinus, UserPlus, X } from 'lucide-react';
+import { BookOpen, Check, Search, UserMinus, UserPlus, X } from 'lucide-react';
 import {
   getFriends,
   removeFriend,
@@ -237,19 +237,25 @@ function UserRow({ user, onSend, onAccept, onReject, onRemove }) {
           </>
         )}
         {user.relation === 'friend' && (
-          <ActionButton label="Eliminar amigo" onClick={onRemove} danger>
-            <UserMinus size={16} />
-          </ActionButton>
+          <>
+            <ActionButton as={Link} to={profilePath} label="Ver actividad">
+              <BookOpen size={16} />
+            </ActionButton>
+            <ActionButton label="Eliminar amigo" onClick={onRemove} danger>
+              <UserMinus size={16} />
+            </ActionButton>
+          </>
         )}
       </div>
     </div>
   );
 }
 
-function ActionButton({ label, children, onClick, primary, danger }) {
+function ActionButton({ as: Component = 'button', label, children, onClick, to, primary, danger }) {
   return (
-    <button
-      type="button"
+    <Component
+      type={Component === 'button' ? 'button' : undefined}
+      to={to}
       title={label}
       aria-label={label}
       onClick={onClick}
@@ -262,6 +268,6 @@ function ActionButton({ label, children, onClick, primary, danger }) {
       }`}
     >
       {children}
-    </button>
+    </Component>
   );
 }
